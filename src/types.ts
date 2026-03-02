@@ -46,4 +46,25 @@ export interface Invoice {
   type: 'sale' | 'purchase';
 }
 
-export type View = 'dashboard' | 'invoices' | 'inventory' | 'customers' | 'vendors' | 'settings';
+export interface Tenant {
+  id: string;
+  name: string;
+  gstin: string;
+  email: string;
+  phone: string;
+  address: string;
+  plan: 'free' | 'pro' | 'enterprise';
+  status: 'active' | 'inactive';
+  billingCycle?: 'monthly' | 'yearly';
+  nextBillingDate?: string;
+  amount?: number;
+}
+
+export interface AppConfig {
+  primaryColor: string;
+  logoUrl: string;
+  appName: string;
+  currency: string;
+}
+
+export type View = 'dashboard' | 'invoices' | 'inventory' | 'customers' | 'vendors' | 'settings' | 'tenants' | 'billing';

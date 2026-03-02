@@ -23,7 +23,10 @@ import {
   Trash2,
   Edit2,
   ChevronRight,
-  Filter
+  Filter,
+  Building2,
+  ShieldCheck,
+  Globe
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -41,10 +44,16 @@ import {
 import { format } from 'date-fns';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
-import { Product, Contact, Invoice, View, InvoiceItem } from './types';
+import { Product, Contact, Invoice, View, InvoiceItem, Tenant, AppConfig } from './types';
 import { cn, formatCurrency, calculateGST } from './utils';
 
 // Mock Data
+const MOCK_TENANTS: Tenant[] = [
+  { id: '1', name: 'BharatBill Solutions', gstin: '27ABCDE1234F1Z5', email: 'contact@bharatbill.com', phone: '+91 98765 43210', address: 'Mumbai', plan: 'enterprise', status: 'active', billingCycle: 'yearly', nextBillingDate: '2025-01-01', amount: 15000 },
+  { id: '2', name: 'South India Retail', gstin: '33FGHIJ5678K2Z6', email: 'billing@southretail.com', phone: '+91 88888 77777', address: 'Chennai', plan: 'pro', status: 'active', billingCycle: 'monthly', nextBillingDate: '2024-04-01', amount: 1200 },
+  { id: '3', name: 'North Logistics', gstin: '07KLMNO9012P3Z7', email: 'ops@northlog.com', phone: '+91 77777 66666', address: 'Delhi', plan: 'free', status: 'inactive' },
+];
+
 const MOCK_PRODUCTS: Product[] = [
   { id: '1', name: 'Premium Laptop', sku: 'LAP-001', hsnCode: '8471', price: 45000, stock: 15, unit: 'pcs', gstRate: 18 },
   { id: '2', name: 'Wireless Mouse', sku: 'MOU-002', hsnCode: '8471', price: 1200, stock: 50, unit: 'pcs', gstRate: 12 },
@@ -106,7 +115,23 @@ export default function App() {
   const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
   const [contacts, setContacts] = useState<Contact[]>(MOCK_CONTACTS);
   const [invoices, setInvoices] = useState<Invoice[]>(MOCK_INVOICES);
+  const [tenants, setTenants] = useState<Tenant[]>(MOCK_TENANTS);
+  const [activeTenantId, setActiveTenantId] = useState('1');
   const [isNewInvoiceModalOpen, setIsNewInvoiceModalOpen] = useState(false);
+  const [appConfig, setAppConfig] = useState<AppConfig>({
+    primaryColor: '#10b981',
+    logoUrl: '',
+    appName: 'BharatBill',
+    currency: 'INR'
+  });
+  const [businessProfile, setBusinessProfile] = useState({
+    name: 'BharatBill Solutions',
+    gstin: '27ABCDE1234F1Z5',
+    email: 'contact@bharatbill.com',
+    phone: '+91 98765 43210',
+    address: '123 Business Park, Mumbai, Maharashtra, 400001',
+    logo: ''
+  });
 
   const generatePDF = (invoice: Invoice) => {
     const doc = new jsPDF();
@@ -375,6 +400,172 @@ export default function App() {
     </div>
   );
 
+  const renderTenants = () => (
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="p-6 border-bottom border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h2 className="text-xl font-bold">Tenant Management</h2>
+          <p className="text-sm text-slate-500">Manage multi-industry business accounts</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setCurrentView('billing')}
+            className="text-sm font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+          >
+            <CreditCard className="w-4 h-4" /> Billing Overview
+          </button>
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Search tenants..." 
+              className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 w-full md:w-64"
+            />
+          </div>
+          <button className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 hover:bg-emerald-700 transition-colors">
+            <Plus className="w-4 h-4" /> New Tenant
+          </button>
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-slate-50/50 border-y border-slate-100">
+              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Business Name</th>
+              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Plan</th>
+              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">GSTIN</th>
+              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {tenants.map(tenant => (
+              <tr key={tenant.id} className="hover:bg-slate-50/50 transition-colors">
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600">
+                      <Building2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">{tenant.name}</p>
+                      <p className="text-xs text-slate-500">{tenant.email}</p>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <span className={cn(
+                    "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                    tenant.plan === 'enterprise' ? "bg-indigo-50 text-indigo-700" : 
+                    tenant.plan === 'pro' ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-700"
+                  )}>
+                    {tenant.plan}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-sm text-slate-500 font-mono">{tenant.gstin}</td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      "w-2 h-2 rounded-full",
+                      tenant.status === 'active' ? "bg-emerald-500" : "bg-slate-300"
+                    )} />
+                    <span className="text-sm text-slate-600 capitalize">{tenant.status}</span>
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => setActiveTenantId(tenant.id)}
+                      className={cn(
+                        "text-xs font-bold px-3 py-1.5 rounded-lg transition-all",
+                        activeTenantId === tenant.id ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      )}
+                    >
+                      {activeTenantId === tenant.id ? 'Active' : 'Switch'}
+                    </button>
+                    <button className="p-2 text-slate-400 hover:text-primary transition-colors"><Edit2 className="w-4 h-4" /></button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  const renderBilling = () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard 
+          title="Monthly Revenue" 
+          value={formatCurrency(125000)} 
+          icon={<TrendingUp className="w-5 h-5" />} 
+          trend="+12.5%" 
+          trendType="up" 
+        />
+        <StatCard 
+          title="Active Subscriptions" 
+          value="42" 
+          icon={<Users className="w-5 h-5" />} 
+          trend="+3" 
+          trendType="up" 
+        />
+        <StatCard 
+          title="Pending Renewals" 
+          value="5" 
+          icon={<Bell className="w-5 h-5" />} 
+          trend="-2" 
+          trendType="down" 
+        />
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+          <h2 className="text-xl font-bold">Tenant Billing Plans</h2>
+          <button className="text-sm font-bold text-emerald-600 hover:text-emerald-700">View All Invoices</button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/50 border-y border-slate-100">
+                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Tenant</th>
+                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Plan</th>
+                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Cycle</th>
+                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Next Billing</th>
+                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Amount</th>
+                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {tenants.map(tenant => (
+                <tr key={tenant.id} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="px-6 py-4">
+                    <p className="text-sm font-bold text-slate-900">{tenant.name}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={cn(
+                      "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                      tenant.plan === 'enterprise' ? "bg-indigo-50 text-indigo-700" : 
+                      tenant.plan === 'pro' ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-700"
+                    )}>
+                      {tenant.plan}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-600 capitalize">{tenant.billingCycle || 'N/A'}</td>
+                  <td className="px-6 py-4 text-sm text-slate-600">{tenant.nextBillingDate || 'N/A'}</td>
+                  <td className="px-6 py-4 text-sm font-bold text-slate-900">{tenant.amount ? formatCurrency(tenant.amount) : '-'}</td>
+                  <td className="px-6 py-4">
+                    <button className="text-xs font-bold text-emerald-600 hover:underline">Manage Plan</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderInventory = () => (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
       <div className="p-6 border-bottom border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -437,6 +628,216 @@ export default function App() {
     </div>
   );
 
+  const renderSettings = () => (
+    <div className="space-y-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="p-6 border-b border-slate-100">
+          <h2 className="text-xl font-bold">Admin Panel</h2>
+          <p className="text-sm text-slate-500">Manage your business profile and application settings</p>
+        </div>
+        
+        <div className="p-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            {/* Business Profile Section */}
+            <div className="lg:col-span-2 space-y-8">
+              <div>
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6">Business Profile</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-600">Business Name</label>
+                    <input 
+                      type="text" 
+                      value={businessProfile.name}
+                      onChange={(e) => setBusinessProfile({...businessProfile, name: e.target.value})}
+                      className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-600">GSTIN</label>
+                    <input 
+                      type="text" 
+                      value={businessProfile.gstin}
+                      onChange={(e) => setBusinessProfile({...businessProfile, gstin: e.target.value})}
+                      className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-mono"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-600">Email Address</label>
+                    <input 
+                      type="email" 
+                      value={businessProfile.email}
+                      onChange={(e) => setBusinessProfile({...businessProfile, email: e.target.value})}
+                      className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-600">Phone Number</label>
+                    <input 
+                      type="text" 
+                      value={businessProfile.phone}
+                      onChange={(e) => setBusinessProfile({...businessProfile, phone: e.target.value})}
+                      className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
+                    />
+                  </div>
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="text-xs font-semibold text-slate-600">Business Address</label>
+                    <textarea 
+                      rows={3}
+                      value={businessProfile.address}
+                      onChange={(e) => setBusinessProfile({...businessProfile, address: e.target.value})}
+                      className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm resize-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-slate-100">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6">Invoice Customization</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-600">Invoice Prefix</label>
+                    <input 
+                      type="text" 
+                      placeholder="INV"
+                      className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-600">Starting Number</label>
+                    <input 
+                      type="number" 
+                      placeholder="1001"
+                      className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-slate-100">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6">App Customization (Admin)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-600">App Name</label>
+                    <input 
+                      type="text" 
+                      value={appConfig.appName}
+                      onChange={(e) => setAppConfig({...appConfig, appName: e.target.value})}
+                      className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-600">Primary Theme Color</label>
+                    <div className="flex gap-3">
+                      <input 
+                        type="color" 
+                        value={appConfig.primaryColor}
+                        onChange={(e) => setAppConfig({...appConfig, primaryColor: e.target.value})}
+                        className="w-12 h-12 rounded-xl border-none p-1 bg-slate-50 cursor-pointer"
+                      />
+                      <input 
+                        type="text" 
+                        value={appConfig.primaryColor}
+                        onChange={(e) => setAppConfig({...appConfig, primaryColor: e.target.value})}
+                        className="flex-1 bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-mono uppercase"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-600">Logo URL</label>
+                    <input 
+                      type="text" 
+                      value={appConfig.logoUrl}
+                      onChange={(e) => setAppConfig({...appConfig, logoUrl: e.target.value})}
+                      placeholder="https://example.com/logo.png"
+                      className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-600">Default Currency</label>
+                    <select 
+                      value={appConfig.currency}
+                      onChange={(e) => setAppConfig({...appConfig, currency: e.target.value})}
+                      className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
+                    >
+                      <option value="INR">INR (₹)</option>
+                      <option value="USD">USD ($)</option>
+                      <option value="EUR">EUR (€)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-6">
+                <button className="bg-emerald-600 text-white px-8 py-3 rounded-xl text-sm font-bold shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all">
+                  Save Changes
+                </button>
+              </div>
+            </div>
+
+            {/* Side Actions Section */}
+            <div className="space-y-8">
+              <div>
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6">System Status</h3>
+                <div className="space-y-4">
+                  <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                      <span className="text-sm font-medium text-emerald-700">GST API Connected</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-600 uppercase">Active</span>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 bg-slate-400 rounded-full" />
+                      <span className="text-sm font-medium text-slate-600">Last Backup</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase">2h ago</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6">Quick Actions</h3>
+                <div className="space-y-3">
+                  <button className="w-full flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors group">
+                    <div className="flex items-center gap-3">
+                      <Download className="w-5 h-5 text-slate-400 group-hover:text-primary" />
+                      <span className="text-sm font-medium text-slate-700">Export All Data</span>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-300" />
+                  </button>
+                  <button className="w-full flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors group">
+                    <div className="flex items-center gap-3">
+                      <Users className="w-5 h-5 text-slate-400 group-hover:text-primary" />
+                      <span className="text-sm font-medium text-slate-700">Manage Team</span>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-300" />
+                  </button>
+                  <button 
+                    onClick={() => setCurrentView('tenants')}
+                    className="w-full flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Building2 className="w-5 h-5 text-slate-400 group-hover:text-primary" />
+                      <span className="text-sm font-medium text-slate-700">Manage Tenants</span>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-300" />
+                  </button>
+                  <button className="w-full flex items-center justify-between p-4 bg-rose-50 border border-rose-100 rounded-2xl hover:bg-rose-100 transition-colors group">
+                    <div className="flex items-center gap-3">
+                      <Trash2 className="w-5 h-5 text-rose-400" />
+                      <span className="text-sm font-medium text-rose-700">Reset System</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen flex bg-slate-50">
       {/* Sidebar */}
@@ -445,22 +846,28 @@ export default function App() {
         isSidebarOpen ? "w-64" : "w-20"
       )}>
         <div className="p-6 flex items-center gap-3">
-          <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
-            <IndianRupee className="w-5 h-5 text-white" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg" style={{ backgroundColor: appConfig.primaryColor }}>
+            {appConfig.logoUrl ? (
+              <img src={appConfig.logoUrl} alt="Logo" className="w-6 h-6 object-contain" referrerPolicy="no-referrer" />
+            ) : (
+              <IndianRupee className="w-5 h-5 text-white" />
+            )}
           </div>
-          {isSidebarOpen && <h1 className="text-xl font-bold tracking-tight">BharatBill</h1>}
+          {isSidebarOpen && <h1 className="text-xl font-bold tracking-tight">{appConfig.appName}</h1>}
         </div>
 
         <nav className="flex-1 px-4 space-y-2 mt-4">
-          <NavItem icon={<LayoutDashboard />} label="Dashboard" active={currentView === 'dashboard'} onClick={() => setCurrentView('dashboard')} collapsed={!isSidebarOpen} />
-          <NavItem icon={<FileText />} label="Invoices" active={currentView === 'invoices'} onClick={() => setCurrentView('invoices')} collapsed={!isSidebarOpen} />
-          <NavItem icon={<Package />} label="Inventory" active={currentView === 'inventory'} onClick={() => setCurrentView('inventory')} collapsed={!isSidebarOpen} />
-          <NavItem icon={<Users />} label="Customers" active={currentView === 'customers'} onClick={() => setCurrentView('customers')} collapsed={!isSidebarOpen} />
-          <NavItem icon={<ShoppingCart />} label="Purchases" active={false} onClick={() => {}} collapsed={!isSidebarOpen} />
+          <NavItem icon={<LayoutDashboard />} label="Dashboard" active={currentView === 'dashboard'} onClick={() => setCurrentView('dashboard')} collapsed={!isSidebarOpen} primaryColor={appConfig.primaryColor} />
+          <NavItem icon={<FileText />} label="Invoices" active={currentView === 'invoices'} onClick={() => setCurrentView('invoices')} collapsed={!isSidebarOpen} primaryColor={appConfig.primaryColor} />
+          <NavItem icon={<Package />} label="Inventory" active={currentView === 'inventory'} onClick={() => setCurrentView('inventory')} collapsed={!isSidebarOpen} primaryColor={appConfig.primaryColor} />
+          <NavItem icon={<Users />} label="Customers" active={currentView === 'customers'} onClick={() => setCurrentView('customers')} collapsed={!isSidebarOpen} primaryColor={appConfig.primaryColor} />
+          <NavItem icon={<Building2 />} label="Tenants" active={currentView === 'tenants'} onClick={() => setCurrentView('tenants')} collapsed={!isSidebarOpen} primaryColor={appConfig.primaryColor} />
+          <NavItem icon={<CreditCard />} label="Billing" active={currentView === 'billing'} onClick={() => setCurrentView('billing')} collapsed={!isSidebarOpen} primaryColor={appConfig.primaryColor} />
+          <NavItem icon={<ShoppingCart />} label="Purchases" active={false} onClick={() => {}} collapsed={!isSidebarOpen} primaryColor={appConfig.primaryColor} />
           <div className="pt-4 pb-2">
             <div className={cn("h-px bg-white/10 mx-2", !isSidebarOpen && "hidden")} />
           </div>
-          <NavItem icon={<Settings />} label="Settings" active={currentView === 'settings'} onClick={() => setCurrentView('settings')} collapsed={!isSidebarOpen} />
+          <NavItem icon={<Settings />} label="Settings" active={currentView === 'settings'} onClick={() => setCurrentView('settings')} collapsed={!isSidebarOpen} primaryColor={appConfig.primaryColor} />
         </nav>
 
         <div className="p-4 border-t border-white/10">
@@ -485,6 +892,21 @@ export default function App() {
           </div>
           
           <div className="flex items-center gap-6">
+            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100">
+              <Building2 className="w-4 h-4 text-emerald-600" />
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold text-slate-400 uppercase leading-none">Active Tenant</span>
+                <span className="text-xs font-bold text-slate-700 leading-tight">
+                  {tenants.find(t => t.id === activeTenantId)?.name || 'Select Tenant'}
+                </span>
+              </div>
+              <button 
+                onClick={() => setCurrentView('tenants')}
+                className="ml-2 p-1 hover:bg-slate-200 rounded-md transition-colors"
+              >
+                <Filter className="w-3 h-3 text-slate-400" />
+              </button>
+            </div>
             <div className="relative hidden md:block">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input 
@@ -523,7 +945,9 @@ export default function App() {
               {currentView === 'invoices' && renderInvoices()}
               {currentView === 'inventory' && renderInventory()}
               {currentView === 'customers' && renderCustomers()}
-              {currentView === 'settings' && <div className="p-12 text-center text-slate-400">Settings Coming Soon</div>}
+              {currentView === 'tenants' && renderTenants()}
+              {currentView === 'billing' && renderBilling()}
+              {currentView === 'settings' && renderSettings()}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -544,15 +968,16 @@ export default function App() {
   );
 }
 
-function NavItem({ icon, label, active, onClick, collapsed }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void, collapsed: boolean }) {
+function NavItem({ icon, label, active, onClick, collapsed, primaryColor }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void, collapsed: boolean, primaryColor: string }) {
   return (
     <button
       onClick={onClick}
       className={cn(
         "w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200",
-        active ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" : "text-white/60 hover:bg-white/5 hover:text-white",
+        active ? "text-white shadow-lg" : "text-white/60 hover:bg-white/5 hover:text-white",
         collapsed && "justify-center px-0"
       )}
+      style={active ? { backgroundColor: primaryColor, boxShadow: `0 10px 15px -3px ${primaryColor}33` } : {}}
     >
       <span className="w-6 h-6 flex items-center justify-center">{icon}</span>
       {!collapsed && <span className="text-sm font-medium">{label}</span>}
