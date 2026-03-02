@@ -76,6 +76,7 @@ const MOCK_INVOICES: Invoice[] = [
     date: '2024-03-01', 
     dueDate: '2024-03-15', 
     contactId: '1', 
+    tenantId: '1',
     items: [
       { id: '1', productId: '1', name: 'Premium Laptop', hsnCode: '8471', quantity: 1, price: 45000, gstRate: 18, amount: 45000, gstAmount: 8100 }
     ],
@@ -91,6 +92,7 @@ const MOCK_INVOICES: Invoice[] = [
     date: '2024-03-02', 
     dueDate: '2024-03-16', 
     contactId: '2', 
+    tenantId: '1',
     items: [
       { id: '2', productId: '2', name: 'Wireless Mouse', hsnCode: '8471', quantity: 5, price: 1200, gstRate: 12, amount: 6000, gstAmount: 720 }
     ],
@@ -113,7 +115,9 @@ const CHART_DATA = [
 
 export default function App() {
   const [currentView, setCurrentView] = useState<View>('dashboard');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [billingDuration, setBillingDuration] = useState<'monthly' | 'quarterly' | 'half-yearly' | 'yearly'>('monthly');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
   const [contacts, setContacts] = useState<Contact[]>(MOCK_CONTACTS);
   const [invoices, setInvoices] = useState<Invoice[]>(MOCK_INVOICES);
@@ -121,6 +125,16 @@ export default function App() {
   const [activeTenantId, setActiveTenantId] = useState('1');
   const [isNewInvoiceModalOpen, setIsNewInvoiceModalOpen] = useState(false);
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 1024) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -211,10 +225,10 @@ export default function App() {
 
   const renderCustomers = () => (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-      <div className="p-6 border-bottom border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-4 md:p-6 border-bottom border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <h2 className="text-xl font-bold">Customers</h2>
-        <div className="flex items-center gap-3">
-          <div className="relative">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
@@ -222,7 +236,7 @@ export default function App() {
               className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 w-full md:w-64"
             />
           </div>
-          <button className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 hover:bg-emerald-700 transition-colors">
+          <button className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors">
             <Plus className="w-4 h-4" /> Add Customer
           </button>
         </div>
@@ -353,10 +367,10 @@ export default function App() {
 
   const renderInvoices = () => (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-      <div className="p-6 border-bottom border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-4 md:p-6 border-bottom border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <h2 className="text-xl font-bold">Invoices</h2>
-        <div className="flex items-center gap-3">
-          <div className="relative">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
@@ -366,7 +380,7 @@ export default function App() {
           </div>
           <button 
             onClick={() => setIsNewInvoiceModalOpen(true)}
-            className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 hover:bg-emerald-700 transition-colors"
+            className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors"
           >
             <Plus className="w-4 h-4" /> New Invoice
           </button>
@@ -433,19 +447,19 @@ export default function App() {
 
   const renderTenants = () => (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-      <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-4 md:p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <h2 className="text-xl font-bold">Tenant Management</h2>
           <p className="text-sm text-slate-500">Manage multi-industry business accounts</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <button 
             onClick={() => setCurrentView('billing')}
-            className="text-sm font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+            className="text-sm font-bold text-emerald-600 hover:text-emerald-700 flex items-center justify-center gap-1"
           >
             <CreditCard className="w-4 h-4" /> Billing Overview
           </button>
-          <div className="relative">
+          <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
@@ -453,7 +467,7 @@ export default function App() {
               className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 w-full md:w-64"
             />
           </div>
-          <button className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 hover:bg-emerald-700 transition-colors">
+          <button className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors">
             <Plus className="w-4 h-4" /> New Tenant
           </button>
         </div>
@@ -551,7 +565,7 @@ export default function App() {
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+        <div className="p-4 md:p-6 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
           <h2 className="text-xl font-bold">Tenant Billing Plans</h2>
           <button className="text-sm font-bold text-emerald-600 hover:text-emerald-700">View All Invoices</button>
         </div>
@@ -599,10 +613,10 @@ export default function App() {
 
   const renderInventory = () => (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-      <div className="p-6 border-bottom border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-4 md:p-6 border-bottom border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <h2 className="text-xl font-bold">Inventory</h2>
-        <div className="flex items-center gap-3">
-          <div className="relative">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
@@ -610,7 +624,7 @@ export default function App() {
               className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 w-full md:w-64"
             />
           </div>
-          <button className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 hover:bg-emerald-700 transition-colors">
+          <button className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors">
             <Plus className="w-4 h-4" /> Add Product
           </button>
         </div>
@@ -662,13 +676,13 @@ export default function App() {
   const renderSettings = () => (
     <div className="space-y-6">
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-6 border-b border-slate-100">
+        <div className="p-4 md:p-6 border-b border-slate-100">
           <h2 className="text-xl font-bold">Admin Panel</h2>
           <p className="text-sm text-slate-500">Manage your business profile and application settings</p>
         </div>
         
-        <div className="p-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <div className="p-4 md:p-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
             {/* Business Profile Section */}
             <div className="lg:col-span-2 space-y-8">
               <div>
@@ -869,39 +883,218 @@ export default function App() {
     </div>
   );
 
-  return (
-    <div className="min-h-screen flex bg-slate-50">
-      {/* Sidebar */}
-      <aside className={cn(
-        "bg-primary text-white transition-all duration-300 flex flex-col fixed h-full z-50",
-        isSidebarOpen ? "w-64" : "w-20"
-      )}>
-        <div className="p-6 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg" style={{ backgroundColor: appConfig.primaryColor }}>
-            {appConfig.logoUrl ? (
-              <img src={appConfig.logoUrl} alt="Logo" className="w-6 h-6 object-contain" referrerPolicy="no-referrer" />
-            ) : (
-              <IndianRupee className="w-5 h-5 text-white" />
-            )}
+  const renderPlans = () => {
+    const plans = [
+      {
+        name: 'Free',
+        price: 0,
+        description: 'Perfect for small businesses starting out.',
+        features: ['Up to 50 invoices/month', 'Basic inventory', 'Single user', 'Standard support'],
+        buttonText: 'Current Plan',
+        isCurrent: true,
+        color: 'slate'
+      },
+      {
+        name: 'Pro',
+        price: billingDuration === 'monthly' ? 1999 : 
+               billingDuration === 'quarterly' ? 5499 : 
+               billingDuration === 'half-yearly' ? 9999 : 17999,
+        description: 'Advanced features for growing businesses.',
+        features: ['Unlimited invoices', 'Advanced inventory', 'Up to 5 users', 'Priority support', 'GST reports'],
+        buttonText: 'Upgrade to Pro',
+        isCurrent: false,
+        color: 'emerald',
+        popular: true
+      },
+      {
+        name: 'Enterprise',
+        price: billingDuration === 'monthly' ? 4999 : 
+               billingDuration === 'quarterly' ? 13999 : 
+               billingDuration === 'half-yearly' ? 24999 : 44999,
+        description: 'Custom solutions for large enterprises.',
+        features: ['Everything in Pro', 'Multi-tenant support', 'Unlimited users', 'Dedicated account manager', 'Custom API access'],
+        buttonText: 'Contact Sales',
+        isCurrent: false,
+        color: 'indigo'
+      }
+    ];
+
+    const getDurationLabel = () => {
+      switch(billingDuration) {
+        case 'monthly': return '/ month';
+        case 'quarterly': return '/ quarter';
+        case 'half-yearly': return '/ 6 months';
+        case 'yearly': return '/ year';
+      }
+    };
+
+    const getSavingsLabel = () => {
+      switch(billingDuration) {
+        case 'monthly': return null;
+        case 'quarterly': return 'Save 8%';
+        case 'half-yearly': return 'Save 16%';
+        case 'yearly': return 'Save 25%';
+      }
+    };
+
+    return (
+      <div className="space-y-8 max-w-6xl mx-auto py-4">
+        <div className="text-center space-y-4">
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900">Choose the right plan for your business</h2>
+          <p className="text-slate-500 max-w-2xl mx-auto">
+            Scale your billing operations with BharatBill. Choose a plan that fits your current needs and upgrade as you grow.
+          </p>
+          
+          <div className="flex justify-center pt-4">
+            <div className="bg-slate-100 p-1 rounded-xl flex items-center gap-1">
+              {(['monthly', 'quarterly', 'half-yearly', 'yearly'] as const).map((duration) => (
+                <button
+                  key={duration}
+                  onClick={() => setBillingDuration(duration)}
+                  className={cn(
+                    "px-4 py-2 text-xs font-bold rounded-lg transition-all capitalize",
+                    billingDuration === duration 
+                      ? "bg-white text-emerald-600 shadow-sm" 
+                      : "text-slate-500 hover:text-slate-700"
+                  )}
+                >
+                  {duration}
+                </button>
+              ))}
+            </div>
           </div>
-          {isSidebarOpen && <h1 className="text-xl font-bold tracking-tight">{appConfig.appName}</h1>}
+          {getSavingsLabel() && (
+            <p className="text-emerald-600 text-xs font-bold animate-bounce">
+              {getSavingsLabel()} with {billingDuration} billing!
+            </p>
+          )}
         </div>
 
-        <nav className="flex-1 px-4 space-y-2 mt-4">
-          <NavItem icon={<LayoutDashboard />} label="Dashboard" active={currentView === 'dashboard'} onClick={() => setCurrentView('dashboard')} collapsed={!isSidebarOpen} primaryColor={appConfig.primaryColor} />
-          <NavItem icon={<FileText />} label="Invoices" active={currentView === 'invoices'} onClick={() => setCurrentView('invoices')} collapsed={!isSidebarOpen} primaryColor={appConfig.primaryColor} />
-          <NavItem icon={<Package />} label="Inventory" active={currentView === 'inventory'} onClick={() => setCurrentView('inventory')} collapsed={!isSidebarOpen} primaryColor={appConfig.primaryColor} />
-          <NavItem icon={<Users />} label="Customers" active={currentView === 'customers'} onClick={() => setCurrentView('customers')} collapsed={!isSidebarOpen} primaryColor={appConfig.primaryColor} />
-          <NavItem icon={<Building2 />} label="Tenants" active={currentView === 'tenants'} onClick={() => setCurrentView('tenants')} collapsed={!isSidebarOpen} primaryColor={appConfig.primaryColor} />
-          <NavItem icon={<CreditCard />} label="Billing" active={currentView === 'billing'} onClick={() => setCurrentView('billing')} collapsed={!isSidebarOpen} primaryColor={appConfig.primaryColor} />
-          <NavItem icon={<ShoppingCart />} label="Purchases" active={false} onClick={() => {}} collapsed={!isSidebarOpen} primaryColor={appConfig.primaryColor} />
-          <div className="pt-4 pb-2">
-            <div className={cn("h-px bg-white/10 mx-2", !isSidebarOpen && "hidden")} />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {plans.map((plan) => (
+            <div 
+              key={plan.name}
+              className={cn(
+                "relative bg-white rounded-3xl border p-8 flex flex-col h-full transition-all hover:shadow-xl hover:-translate-y-1",
+                plan.popular ? "border-emerald-500 shadow-lg ring-1 ring-emerald-500/20" : "border-slate-100"
+              )}
+            >
+              {plan.popular && (
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-emerald-500 text-white px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                  Most Popular
+                </div>
+              )}
+              
+              <div className="mb-8">
+                <h3 className="text-xl font-bold text-slate-900 mb-2">{plan.name}</h3>
+                <p className="text-sm text-slate-500 leading-relaxed">{plan.description}</p>
+              </div>
+
+              <div className="mb-8">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold text-slate-900">{formatCurrency(plan.price)}</span>
+                  <span className="text-slate-400 text-sm font-medium">{getDurationLabel()}</span>
+                </div>
+              </div>
+
+              <div className="flex-1 space-y-4 mb-8">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">What's included:</p>
+                <ul className="space-y-3">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-3 text-sm text-slate-600">
+                      <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <button
+                className={cn(
+                  "w-full py-4 rounded-2xl text-sm font-bold transition-all",
+                  plan.isCurrent 
+                    ? "bg-slate-100 text-slate-500 cursor-default" 
+                    : plan.color === 'emerald' 
+                      ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-200" 
+                      : "bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-200"
+                )}
+              >
+                {plan.buttonText}
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-2 text-center md:text-left">
+            <h4 className="text-lg font-bold text-slate-900">Need a custom plan?</h4>
+            <p className="text-sm text-slate-500">We offer specialized pricing for high-volume businesses and government organizations.</p>
           </div>
-          <NavItem icon={<Settings />} label="Settings" active={currentView === 'settings'} onClick={() => setCurrentView('settings')} collapsed={!isSidebarOpen} primaryColor={appConfig.primaryColor} />
+          <button className="bg-white text-slate-900 border border-slate-200 px-8 py-3 rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors">
+            Talk to an Expert
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen flex bg-slate-50 relative">
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] lg:hidden"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Sidebar */}
+      <aside className={cn(
+        "bg-primary text-white transition-all duration-300 flex flex-col fixed h-full z-[70] lg:z-50",
+        isSidebarOpen ? "w-64" : "w-20",
+        "lg:translate-x-0",
+        isMobileMenuOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0"
+      )}>
+        <div className="p-6 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg" style={{ backgroundColor: appConfig.primaryColor }}>
+              {appConfig.logoUrl ? (
+                <img src={appConfig.logoUrl} alt="Logo" className="w-6 h-6 object-contain" referrerPolicy="no-referrer" />
+              ) : (
+                <IndianRupee className="w-5 h-5 text-white" />
+              )}
+            </div>
+            {(isSidebarOpen || isMobileMenuOpen) && <h1 className="text-xl font-bold tracking-tight">{appConfig.appName}</h1>}
+          </div>
+          <button 
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="lg:hidden p-2 hover:bg-white/10 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
+          <NavItem icon={<LayoutDashboard />} label="Dashboard" active={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
+          <NavItem icon={<FileText />} label="Invoices" active={currentView === 'invoices'} onClick={() => { setCurrentView('invoices'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
+          <NavItem icon={<Package />} label="Inventory" active={currentView === 'inventory'} onClick={() => { setCurrentView('inventory'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
+          <NavItem icon={<Users />} label="Customers" active={currentView === 'customers'} onClick={() => { setCurrentView('customers'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
+          <NavItem icon={<Building2 />} label="Tenants" active={currentView === 'tenants'} onClick={() => { setCurrentView('tenants'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
+          <NavItem icon={<CreditCard />} label="Plans" active={currentView === 'plans'} onClick={() => { setCurrentView('plans'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
+          <NavItem icon={<CreditCard />} label="Billing" active={currentView === 'billing'} onClick={() => { setCurrentView('billing'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
+          <NavItem icon={<ShoppingCart />} label="Purchases" active={false} onClick={() => {}} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
+          <div className="pt-4 pb-2">
+            <div className={cn("h-px bg-white/10 mx-2", !isSidebarOpen && !isMobileMenuOpen && "hidden")} />
+          </div>
+          <NavItem icon={<Settings />} label="Settings" active={currentView === 'settings'} onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
         </nav>
 
-        <div className="p-4 border-t border-white/10">
+        <div className="p-4 border-t border-white/10 hidden lg:block">
           <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className="w-full flex items-center justify-center p-2 rounded-lg hover:bg-white/5 transition-colors"
@@ -913,17 +1106,24 @@ export default function App() {
 
       {/* Main Content */}
       <main className={cn(
-        "flex-1 transition-all duration-300 min-h-screen flex flex-col",
-        isSidebarOpen ? "ml-64" : "ml-20"
+        "flex-1 transition-all duration-300 min-h-screen flex flex-col w-full",
+        isSidebarOpen ? "lg:ml-64" : "lg:ml-20",
+        "ml-0"
       )}>
         {/* Header */}
-        <header className="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-8 sticky top-0 z-40">
+        <header className="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-4 md:px-8 sticky top-0 z-40">
           <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="lg:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
             <h2 className="text-lg font-semibold text-slate-800 capitalize">{currentView}</h2>
           </div>
           
-          <div className="flex items-center gap-6">
-            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100">
+          <div className="flex items-center gap-3 md:gap-6">
+            <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100">
               <Building2 className="w-4 h-4 text-emerald-600" />
               <div className="flex flex-col">
                 <span className="text-[10px] font-bold text-slate-400 uppercase leading-none">Active Tenant</span>
@@ -963,7 +1163,7 @@ export default function App() {
         </header>
 
         {/* Content Area */}
-        <div className="p-8 max-w-7xl mx-auto w-full">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto w-full">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentView}
@@ -978,6 +1178,7 @@ export default function App() {
               {currentView === 'customers' && renderCustomers()}
               {currentView === 'tenants' && renderTenants()}
               {currentView === 'billing' && renderBilling()}
+              {currentView === 'plans' && renderPlans()}
               {currentView === 'settings' && renderSettings()}
             </motion.div>
           </AnimatePresence>
@@ -990,6 +1191,7 @@ export default function App() {
           onClose={() => setIsNewInvoiceModalOpen(false)} 
           products={products}
           contacts={contacts}
+          activeTenantId={activeTenantId}
           onSave={(invoice) => {
             setInvoices([invoice, ...invoices]);
             setIsNewInvoiceModalOpen(false);
@@ -1056,11 +1258,12 @@ function StatCard({ title, value, icon, trend, trendType }: { title: string, val
   );
 }
 
-function NewInvoiceModal({ isOpen, onClose, products, contacts, onSave }: { 
+function NewInvoiceModal({ isOpen, onClose, products, contacts, activeTenantId, onSave }: { 
   isOpen: boolean, 
   onClose: () => void, 
   products: Product[], 
   contacts: Contact[],
+  activeTenantId: string,
   onSave: (invoice: Invoice) => void 
 }) {
   const [items, setItems] = useState<Partial<InvoiceItem>[]>([]);
@@ -1127,6 +1330,7 @@ function NewInvoiceModal({ isOpen, onClose, products, contacts, onSave }: {
       date: format(new Date(), 'yyyy-MM-dd'),
       dueDate,
       contactId: selectedContactId,
+      tenantId: activeTenantId,
       items: items as InvoiceItem[],
       subtotal,
       totalGst,
@@ -1149,15 +1353,15 @@ function NewInvoiceModal({ isOpen, onClose, products, contacts, onSave }: {
         animate={{ scale: 1, opacity: 1 }}
         className="bg-white w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]"
       >
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+        <div className="p-4 md:p-6 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
           <div>
-            <h3 className="text-xl font-bold text-slate-900">Create New Invoice</h3>
-            <p className="text-xs text-slate-500 font-medium">Generate a professional tax invoice for your customer</p>
+            <h3 className="text-lg md:text-xl font-bold text-slate-900">Create New Invoice</h3>
+            <p className="text-[10px] md:text-xs text-slate-500 font-medium">Generate a professional tax invoice</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X className="w-5 h-5 text-slate-400" /></button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8 space-y-8">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 md:space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Customer</label>
@@ -1209,7 +1413,7 @@ function NewInvoiceModal({ isOpen, onClose, products, contacts, onSave }: {
               </button>
             </div>
 
-            <div className="border border-slate-100 rounded-2xl overflow-hidden">
+            <div className="hidden md:block border border-slate-100 rounded-2xl overflow-hidden">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-100">
@@ -1300,36 +1504,123 @@ function NewInvoiceModal({ isOpen, onClose, products, contacts, onSave }: {
                 </tbody>
               </table>
             </div>
+
+            {/* Mobile Items Layout */}
+            <div className="md:hidden space-y-4">
+              {items.length === 0 ? (
+                <div className="px-4 py-12 text-center border border-slate-100 rounded-2xl">
+                  <div className="flex flex-col items-center gap-2 text-slate-400">
+                    <Package className="w-8 h-8 opacity-20" />
+                    <p className="text-sm font-medium">No items added yet</p>
+                    <button onClick={addItem} className="text-xs text-emerald-600 font-bold hover:underline">Click here to add your first item</button>
+                  </div>
+                </div>
+              ) : (
+                items.map((item) => (
+                  <div key={item.id} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Item Details</span>
+                      <button 
+                        onClick={() => removeItem(item.id!)}
+                        className="p-2 text-rose-500 hover:bg-rose-100 rounded-lg transition-all"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Product</label>
+                        <select 
+                          value={item.productId || ''}
+                          onChange={(e) => updateItem(item.id!, 'productId', e.target.value)}
+                          className="w-full bg-white border-slate-200 rounded-lg text-sm focus:ring-emerald-500/20 focus:border-emerald-500"
+                        >
+                          <option value="">Select Product</option>
+                          {products.map(p => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase">Quantity</label>
+                          <input 
+                            type="number" 
+                            min="1"
+                            value={item.quantity || ''}
+                            onChange={(e) => updateItem(item.id!, 'quantity', Number(e.target.value))}
+                            className="w-full bg-white border-slate-200 rounded-lg text-sm focus:ring-emerald-500/20 focus:border-emerald-500"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase">GST %</label>
+                          <select 
+                            value={item.gstRate || 0}
+                            onChange={(e) => updateItem(item.id!, 'gstRate', Number(e.target.value))}
+                            className="w-full bg-white border-slate-200 rounded-lg text-sm focus:ring-emerald-500/20 focus:border-emerald-500"
+                          >
+                            <option value={0}>0%</option>
+                            <option value={5}>5%</option>
+                            <option value={12}>12%</option>
+                            <option value={18}>18%</option>
+                            <option value={28}>28%</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Price</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">₹</span>
+                          <input 
+                            type="number" 
+                            value={item.price || ''}
+                            onChange={(e) => updateItem(item.id!, 'price', Number(e.target.value))}
+                            className="w-full bg-white border-slate-200 rounded-lg text-sm pl-7 focus:ring-emerald-500/20 focus:border-emerald-500"
+                          />
+                        </div>
+                      </div>
+                      <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-500 uppercase">Total</span>
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-slate-900">{formatCurrency((item.amount || 0) + (item.gstAmount || 0))}</p>
+                          <p className="text-[10px] font-medium text-slate-400">Incl. GST: {formatCurrency(item.gstAmount || 0)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="p-8 bg-slate-50 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-8 sticky bottom-0 z-10">
-          <div className="flex flex-wrap gap-8 justify-center md:justify-start">
-            <div className="space-y-1">
+        <div className="p-4 md:p-8 bg-slate-50 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8 sticky bottom-0 z-10">
+          <div className="flex flex-wrap gap-4 md:gap-8 justify-center md:justify-start w-full md:w-auto">
+            <div className="space-y-1 text-center md:text-left">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Subtotal</p>
-              <p className="text-xl font-bold text-slate-700">{formatCurrency(subtotal)}</p>
+              <p className="text-lg md:text-xl font-bold text-slate-700">{formatCurrency(subtotal)}</p>
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1 text-center md:text-left">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total GST</p>
-              <p className="text-xl font-bold text-slate-700">{formatCurrency(totalGst)}</p>
+              <p className="text-lg md:text-xl font-bold text-slate-700">{formatCurrency(totalGst)}</p>
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1 text-center md:text-left">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Grand Total</p>
-              <p className="text-3xl font-black text-emerald-600">{formatCurrency(totalAmount)}</p>
+              <p className="text-2xl md:text-3xl font-black text-emerald-600">{formatCurrency(totalAmount)}</p>
             </div>
           </div>
-          <div className="flex gap-4 w-full md:w-auto">
+          <div className="flex gap-3 md:gap-4 w-full md:w-auto">
             <button 
               onClick={onClose}
-              className="flex-1 md:flex-none px-8 py-4 rounded-2xl text-sm font-bold text-slate-500 hover:bg-slate-200 transition-colors"
+              className="flex-1 md:flex-none px-6 md:px-8 py-3 md:py-4 rounded-2xl text-sm font-bold text-slate-500 hover:bg-slate-200 transition-colors"
             >
               Cancel
             </button>
             <button 
               onClick={handleSave}
-              className="flex-1 md:flex-none px-10 py-4 bg-emerald-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 hover:-translate-y-0.5 transition-all active:translate-y-0"
+              className="flex-1 md:flex-none px-6 md:px-10 py-3 md:py-4 bg-emerald-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 hover:-translate-y-0.5 transition-all active:translate-y-0"
             >
-              Generate Invoice
+              Generate
             </button>
           </div>
         </div>

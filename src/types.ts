@@ -37,6 +37,7 @@ export interface Invoice {
   date: string;
   dueDate: string;
   contactId: string;
+  tenantId: string;
   items: InvoiceItem[];
   subtotal: number;
   totalGst: number;
@@ -70,4 +71,4 @@ export interface AppConfig {
   currency: string;
 }
 
-export type View = 'dashboard' | 'invoices' | 'inventory' | 'customers' | 'vendors' | 'settings' | 'tenants' | 'billing';
+export type View = 'dashboard' | 'invoices' | 'inventory' | 'customers' | 'vendors' | 'settings' | 'tenants' | 'billing' | 'plans';
