@@ -27,7 +27,13 @@ import {
   Building2,
   ShieldCheck,
   Globe,
-  Calendar
+  Calendar,
+  CheckCircle,
+  AlertTriangle,
+  Info,
+  XCircle,
+  BarChart3,
+  PieChart as PieChartIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -40,13 +46,15 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  Cell
+  Cell,
+  PieChart,
+  Pie
 } from 'recharts';
 import { format } from 'date-fns';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import 'jspdf-autotable';
-import { Product, Contact, Invoice, View, InvoiceItem, Tenant, AppConfig } from './types';
+import { Product, Contact, Invoice, View, InvoiceItem, Tenant, AppConfig, Notification } from './types';
 import { cn, formatCurrency, calculateGST } from './utils';
 
 // Mock Data
@@ -104,6 +112,13 @@ const MOCK_INVOICES: Invoice[] = [
   }
 ];
 
+const MOCK_NOTIFICATIONS: Notification[] = [
+  { id: '1', title: 'Low Stock Alert', message: 'Premium Laptop stock is below 10 units.', time: '2 hours ago', read: false, type: 'warning', view: 'inventory' },
+  { id: '2', title: 'Payment Received', message: 'Invoice INV-2024-001 has been paid.', time: '5 hours ago', read: true, type: 'success', view: 'invoices' },
+  { id: '3', title: 'New Customer', message: 'Acme Corp added to your contact list.', time: '1 day ago', read: false, type: 'info', view: 'customers' },
+  { id: '4', title: 'System Update', message: 'BharatBill v2.1 is now live with new features.', time: '2 days ago', read: true, type: 'info' },
+];
+
 const CHART_DATA = [
   { name: 'Jan', sales: 45000, expenses: 32000 },
   { name: 'Feb', sales: 52000, expenses: 38000 },
@@ -122,6 +137,8 @@ export default function App() {
   const [contacts, setContacts] = useState<Contact[]>(MOCK_CONTACTS);
   const [invoices, setInvoices] = useState<Invoice[]>(MOCK_INVOICES);
   const [tenants, setTenants] = useState<Tenant[]>(MOCK_TENANTS);
+  const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [activeTenantId, setActiveTenantId] = useState('1');
   const [isNewInvoiceModalOpen, setIsNewInvoiceModalOpen] = useState(false);
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
@@ -222,6 +239,36 @@ export default function App() {
       showToast('Invoice deleted successfully');
     }
   };
+
+  const markNotificationAsRead = (id: string) => {
+    const notification = notifications.find(n => n.id === id);
+    setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));
+    
+    if (notification?.view) {
+      setCurrentView(notification.view);
+      setIsNotificationsOpen(false);
+    }
+  };
+
+  const addNotification = (title: string, message: string, type: Notification['type'] = 'info', view?: View) => {
+    const newNotification: Notification = {
+      id: Math.random().toString(36).substr(2, 9),
+      title,
+      message,
+      time: 'Just now',
+      read: false,
+      type,
+      view
+    };
+    setNotifications(prev => [newNotification, ...prev]);
+  };
+
+  const clearAllNotifications = () => {
+    setNotifications([]);
+    setIsNotificationsOpen(false);
+  };
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   const renderCustomers = () => (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
@@ -883,6 +930,134 @@ export default function App() {
     </div>
   );
 
+  const renderReports = () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard 
+          title="Total Revenue" 
+          value={formatCurrency(1542000)} 
+          icon={<TrendingUp className="w-5 h-5" />} 
+          trend="+18.2%" 
+          trendType="up" 
+        />
+        <StatCard 
+          title="Total GST Collected" 
+          value={formatCurrency(277560)} 
+          icon={<ShieldCheck className="w-5 h-5" />} 
+          trend="+15.4%" 
+          trendType="up" 
+        />
+        <StatCard 
+          title="Outstanding Amount" 
+          value={formatCurrency(85400)} 
+          icon={<AlertTriangle className="w-5 h-5" />} 
+          trend="-5.2%" 
+          trendType="down" 
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <h3 className="text-lg font-semibold mb-6">Sales by Category</h3>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'Electronics', value: 45 },
+                    { name: 'Furniture', value: 25 },
+                    { name: 'Services', value: 20 },
+                    { name: 'Other', value: 10 },
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {[ '#10b981', '#3b82f6', '#f59e0b', '#ef4444' ].map((color, index) => (
+                    <Cell key={`cell-${index}`} fill={color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-emerald-500" />
+              <span className="text-sm text-slate-600">Electronics (45%)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-blue-500" />
+              <span className="text-sm text-slate-600">Furniture (25%)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-amber-500" />
+              <span className="text-sm text-slate-600">Services (20%)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-rose-500" />
+              <span className="text-sm text-slate-600">Other (10%)</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <h3 className="text-lg font-semibold mb-6">Monthly GST Report</h3>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={CHART_DATA}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Bar dataKey="sales" fill="#10b981" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Available Reports</h3>
+          <button className="text-sm font-bold text-emerald-600 hover:text-emerald-700">Export All</button>
+        </div>
+        <div className="divide-y divide-slate-100">
+          {[
+            { name: 'GSTR-1 Summary', description: 'Monthly outward supplies report for GST filing', type: 'GST' },
+            { name: 'GSTR-3B Details', description: 'Self-assessment monthly return summary', type: 'GST' },
+            { name: 'Profit & Loss Statement', description: 'Comprehensive financial performance overview', type: 'Finance' },
+            { name: 'Inventory Valuation', description: 'Current stock value and turnover ratio', type: 'Inventory' },
+            { name: 'Customer Aging Report', description: 'Outstanding payments grouped by duration', type: 'Receivables' }
+          ].map((report, i) => (
+            <div key={i} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between group">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">{report.name}</p>
+                  <p className="text-xs text-slate-500">{report.description}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 bg-slate-100 text-slate-500 rounded-md">{report.type}</span>
+                <button className="p-2 text-slate-400 hover:text-emerald-600 transition-colors">
+                  <Download className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   const renderPlans = () => {
     const plans = [
       {
@@ -1085,6 +1260,7 @@ export default function App() {
           <NavItem icon={<Package />} label="Inventory" active={currentView === 'inventory'} onClick={() => { setCurrentView('inventory'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
           <NavItem icon={<Users />} label="Customers" active={currentView === 'customers'} onClick={() => { setCurrentView('customers'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
           <NavItem icon={<Building2 />} label="Tenants" active={currentView === 'tenants'} onClick={() => { setCurrentView('tenants'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
+          <NavItem icon={<BarChart3 />} label="Reports" active={currentView === 'reports'} onClick={() => { setCurrentView('reports'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
           <NavItem icon={<CreditCard />} label="Plans" active={currentView === 'plans'} onClick={() => { setCurrentView('plans'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
           <NavItem icon={<CreditCard />} label="Billing" active={currentView === 'billing'} onClick={() => { setCurrentView('billing'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
           <NavItem icon={<ShoppingCart />} label="Purchases" active={false} onClick={() => {}} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
@@ -1146,10 +1322,108 @@ export default function App() {
                 className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 w-64"
               />
             </div>
-            <button className="relative p-2 text-slate-400 hover:text-primary transition-colors">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                className={cn(
+                  "relative p-2 text-slate-400 hover:text-primary transition-colors rounded-xl",
+                  isNotificationsOpen && "bg-slate-100 text-emerald-600"
+                )}
+              >
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
+                )}
+              </button>
+
+              <AnimatePresence>
+                {isNotificationsOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setIsNotificationsOpen(false)} 
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute right-0 mt-2 w-80 md:w-96 bg-white rounded-2xl shadow-xl border border-slate-100 z-50 overflow-hidden"
+                    >
+                      <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                        <h3 className="font-bold text-slate-800">Notifications</h3>
+                        {notifications.length > 0 && (
+                          <button 
+                            onClick={clearAllNotifications}
+                            className="text-xs font-bold text-rose-600 hover:text-rose-700"
+                          >
+                            Clear All
+                          </button>
+                        )}
+                      </div>
+                      <div className="max-h-[400px] overflow-y-auto">
+                        {notifications.length > 0 ? (
+                          <div className="divide-y divide-slate-50">
+                            {notifications.map((notification) => (
+                              <div 
+                                key={notification.id}
+                                onClick={() => markNotificationAsRead(notification.id)}
+                                className={cn(
+                                  "p-4 hover:bg-slate-50 transition-colors cursor-pointer flex gap-3",
+                                  !notification.read && "bg-emerald-50/30"
+                                )}
+                              >
+                                <div className={cn(
+                                  "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+                                  notification.type === 'warning' ? "bg-amber-100 text-amber-600" :
+                                  notification.type === 'success' ? "bg-emerald-100 text-emerald-600" :
+                                  notification.type === 'error' ? "bg-rose-100 text-rose-600" :
+                                  "bg-blue-100 text-blue-600"
+                                )}>
+                                  {notification.type === 'warning' && <AlertTriangle className="w-5 h-5" />}
+                                  {notification.type === 'success' && <CheckCircle className="w-5 h-5" />}
+                                  {notification.type === 'error' && <XCircle className="w-5 h-5" />}
+                                  {notification.type === 'info' && <Info className="w-5 h-5" />}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between gap-2 mb-1">
+                                    <p className="text-sm font-bold text-slate-900 truncate">{notification.title}</p>
+                                    <span className="text-[10px] text-slate-400 whitespace-nowrap">{notification.time}</span>
+                                  </div>
+                                  <p className="text-xs text-slate-500 leading-relaxed">{notification.message}</p>
+                                </div>
+                                {!notification.read && (
+                                  <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2 shrink-0" />
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="p-12 text-center">
+                            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                              <Bell className="w-8 h-8" />
+                            </div>
+                            <p className="text-sm font-medium text-slate-500">No new notifications</p>
+                          </div>
+                        )}
+                      </div>
+                      {notifications.length > 0 && (
+                        <div className="p-3 bg-slate-50 border-t border-slate-100 text-center">
+                          <button 
+                            onClick={() => {
+                              setCurrentView('notifications');
+                              setIsNotificationsOpen(false);
+                            }}
+                            className="text-xs font-bold text-slate-500 hover:text-emerald-600 transition-colors"
+                          >
+                            View All Activity
+                          </button>
+                        </div>
+                      )}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
             <div className="flex items-center gap-3 pl-6 border-l border-slate-100">
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-semibold">Sanju Kumar</p>
@@ -1179,7 +1453,62 @@ export default function App() {
               {currentView === 'tenants' && renderTenants()}
               {currentView === 'billing' && renderBilling()}
               {currentView === 'plans' && renderPlans()}
+              {currentView === 'reports' && renderReports()}
               {currentView === 'settings' && renderSettings()}
+              {currentView === 'notifications' && (
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                  <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                    <h2 className="text-xl font-bold">All Activity</h2>
+                    <button 
+                      onClick={clearAllNotifications}
+                      className="text-sm font-bold text-rose-600 hover:text-rose-700"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                  <div className="divide-y divide-slate-100">
+                    {notifications.length > 0 ? notifications.map(n => (
+                      <div key={n.id} className={cn("p-6 flex gap-4", !n.read && "bg-emerald-50/20")}>
+                        <div className={cn(
+                          "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0",
+                          n.type === 'warning' ? "bg-amber-100 text-amber-600" :
+                          n.type === 'success' ? "bg-emerald-100 text-emerald-600" :
+                          n.type === 'error' ? "bg-rose-100 text-rose-600" :
+                          "bg-blue-100 text-blue-600"
+                        )}>
+                          {n.type === 'warning' && <AlertTriangle className="w-6 h-6" />}
+                          {n.type === 'success' && <CheckCircle className="w-6 h-6" />}
+                          {n.type === 'error' && <XCircle className="w-6 h-6" />}
+                          {n.type === 'info' && <Info className="w-6 h-6" />}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className="font-bold text-slate-900">{n.title}</h4>
+                            <span className="text-xs text-slate-400">{n.time}</span>
+                          </div>
+                          <p className="text-sm text-slate-600 mb-3">{n.message}</p>
+                          {n.view && (
+                            <button 
+                              onClick={() => {
+                                markNotificationAsRead(n.id);
+                                setCurrentView(n.view!);
+                              }}
+                              className="text-xs font-bold text-emerald-600 hover:underline"
+                            >
+                              View Details
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )) : (
+                      <div className="p-20 text-center text-slate-400">
+                        <Bell className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                        <p>No activity found</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -1196,6 +1525,12 @@ export default function App() {
             setInvoices([invoice, ...invoices]);
             setIsNewInvoiceModalOpen(false);
             showToast('Invoice generated successfully!');
+            addNotification(
+              'Invoice Generated',
+              `Invoice ${invoice.invoiceNumber} for ${formatCurrency(invoice.totalAmount)} has been created.`,
+              'success',
+              'invoices'
+            );
           }}
         />
 
