@@ -26,7 +26,8 @@ import {
   Filter,
   Building2,
   ShieldCheck,
-  Globe
+  Globe,
+  Calendar
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -43,6 +44,7 @@ import {
 } from 'recharts';
 import { format } from 'date-fns';
 import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import 'jspdf-autotable';
 import { Product, Contact, Invoice, View, InvoiceItem, Tenant, AppConfig } from './types';
 import { cn, formatCurrency, calculateGST } from './utils';
@@ -118,6 +120,13 @@ export default function App() {
   const [tenants, setTenants] = useState<Tenant[]>(MOCK_TENANTS);
   const [activeTenantId, setActiveTenantId] = useState('1');
   const [isNewInvoiceModalOpen, setIsNewInvoiceModalOpen] = useState(false);
+  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const [appConfig, setAppConfig] = useState<AppConfig>({
     primaryColor: '#10b981',
     logoUrl: '',
@@ -133,7 +142,7 @@ export default function App() {
     logo: ''
   });
 
-  const generatePDF = (invoice: Invoice) => {
+  const generatePDF = (invoice: Invoice, action: 'download' | 'print' = 'download') => {
     const doc = new jsPDF();
     const contact = contacts.find(c => c.id === invoice.contactId);
     
@@ -142,9 +151,9 @@ export default function App() {
     doc.text('TAX INVOICE', 105, 20, { align: 'center' });
     
     doc.setFontSize(10);
-    doc.text('BharatBill Solutions', 20, 40);
-    doc.text('GSTIN: 27ABCDE1234F1Z5', 20, 45);
-    doc.text('Mumbai, Maharashtra, India', 20, 50);
+    doc.text(businessProfile.name, 20, 40);
+    doc.text(`GSTIN: ${businessProfile.gstin}`, 20, 45);
+    doc.text(businessProfile.address, 20, 50);
     
     doc.text(`Invoice #: ${invoice.invoiceNumber}`, 140, 40);
     doc.text(`Date: ${format(new Date(invoice.date), 'dd/MM/yyyy')}`, 140, 45);
@@ -169,7 +178,7 @@ export default function App() {
       formatCurrency(item.amount + item.gstAmount)
     ]);
     
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: 100,
       head: [['Product', 'HSN', 'Qty', 'Price', 'GST %', 'GST Amt', 'Total']],
       body: tableData,
@@ -185,7 +194,19 @@ export default function App() {
     doc.setFontSize(12);
     doc.text(`Grand Total: ${formatCurrency(invoice.totalAmount)}`, 140, finalY + 25);
     
-    doc.save(`${invoice.invoiceNumber}.pdf`);
+    if (action === 'print') {
+      doc.autoPrint();
+      window.open(doc.output('bloburl'), '_blank');
+    } else {
+      doc.save(`${invoice.invoiceNumber}.pdf`);
+    }
+  };
+
+  const deleteInvoice = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this invoice?')) {
+      setInvoices(invoices.filter(inv => inv.id !== id));
+      showToast('Invoice deleted successfully');
+    }
   };
 
   const renderCustomers = () => (
@@ -382,14 +403,24 @@ export default function App() {
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-2">
-                    <button className="p-2 text-slate-400 hover:text-primary transition-colors"><Printer className="w-4 h-4" /></button>
                     <button 
-                      onClick={() => generatePDF(invoice)}
+                      onClick={() => generatePDF(invoice, 'print')}
+                      className="p-2 text-slate-400 hover:text-primary transition-colors"
+                    >
+                      <Printer className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => generatePDF(invoice, 'download')}
                       className="p-2 text-slate-400 hover:text-primary transition-colors"
                     >
                       <Download className="w-4 h-4" />
                     </button>
-                    <button className="p-2 text-slate-400 hover:text-danger transition-colors"><Trash2 className="w-4 h-4" /></button>
+                    <button 
+                      onClick={() => deleteInvoice(invoice.id)}
+                      className="p-2 text-slate-400 hover:text-danger transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -402,7 +433,7 @@ export default function App() {
 
   const renderTenants = () => (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-      <div className="p-6 border-bottom border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <h2 className="text-xl font-bold">Tenant Management</h2>
           <p className="text-sm text-slate-500">Manage multi-industry business accounts</p>
@@ -953,20 +984,39 @@ export default function App() {
         </div>
       </main>
 
-      {/* New Invoice Modal */}
-      <NewInvoiceModal 
-        isOpen={isNewInvoiceModalOpen} 
-        onClose={() => setIsNewInvoiceModalOpen(false)} 
-        products={products}
-        contacts={contacts}
-        onSave={(invoice) => {
-          setInvoices([invoice, ...invoices]);
-          setIsNewInvoiceModalOpen(false);
-        }}
-      />
-    </div>
-  );
-}
+        {/* New Invoice Modal */}
+        <NewInvoiceModal 
+          isOpen={isNewInvoiceModalOpen} 
+          onClose={() => setIsNewInvoiceModalOpen(false)} 
+          products={products}
+          contacts={contacts}
+          onSave={(invoice) => {
+            setInvoices([invoice, ...invoices]);
+            setIsNewInvoiceModalOpen(false);
+            showToast('Invoice generated successfully!');
+          }}
+        />
+
+        {/* Toast Notification */}
+        <AnimatePresence>
+          {toast && (
+            <motion.div
+              initial={{ opacity: 0, y: 50, x: '-50%' }}
+              animate={{ opacity: 1, y: 0, x: '-50%' }}
+              exit={{ opacity: 0, y: 20, x: '-50%' }}
+              className={cn(
+                "fixed bottom-8 left-1/2 z-[200] px-6 py-3 rounded-2xl shadow-2xl text-white font-bold flex items-center gap-3",
+                toast.type === 'success' ? "bg-emerald-600" : "bg-rose-600"
+              )}
+            >
+              <ShieldCheck className="w-5 h-5" />
+              {toast.message}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  }
 
 function NavItem({ icon, label, active, onClick, collapsed, primaryColor }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void, collapsed: boolean, primaryColor: string }) {
   return (
@@ -1016,15 +1066,17 @@ function NewInvoiceModal({ isOpen, onClose, products, contacts, onSave }: {
   const [items, setItems] = useState<Partial<InvoiceItem>[]>([]);
   const [selectedContactId, setSelectedContactId] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState(`INV-${format(new Date(), 'yyyy')}-${Math.floor(1000 + Math.random() * 9000)}`);
+  const [dueDate, setDueDate] = useState(format(new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'));
 
   const addItem = () => {
-    setItems([...items, { id: Math.random().toString(36).substr(2, 9) }]);
+    setItems([...items, { id: Math.random().toString(36).substr(2, 9), quantity: 1, price: 0, gstRate: 18, amount: 0, gstAmount: 0 }]);
   };
 
   const updateItem = (id: string, field: keyof InvoiceItem, value: any) => {
     setItems(items.map(item => {
       if (item.id === id) {
         const updatedItem = { ...item, [field]: value };
+        
         if (field === 'productId') {
           const product = products.find(p => p.id === value);
           if (product) {
@@ -1032,15 +1084,16 @@ function NewInvoiceModal({ isOpen, onClose, products, contacts, onSave }: {
             updatedItem.hsnCode = product.hsnCode;
             updatedItem.price = product.price;
             updatedItem.gstRate = product.gstRate;
-            updatedItem.quantity = 1;
           }
         }
         
-        if (updatedItem.price && updatedItem.quantity) {
-          const { taxableAmount, gstAmount } = calculateGST(updatedItem.price, updatedItem.gstRate || 0, updatedItem.quantity);
-          updatedItem.amount = taxableAmount;
-          updatedItem.gstAmount = gstAmount;
-        }
+        const price = Number(updatedItem.price) || 0;
+        const quantity = Number(updatedItem.quantity) || 0;
+        const gstRate = Number(updatedItem.gstRate) || 0;
+        
+        const { taxableAmount, gstAmount } = calculateGST(price, gstRate, quantity);
+        updatedItem.amount = taxableAmount;
+        updatedItem.gstAmount = gstAmount;
         
         return updatedItem;
       }
@@ -1057,13 +1110,22 @@ function NewInvoiceModal({ isOpen, onClose, products, contacts, onSave }: {
   const totalAmount = subtotal + totalGst;
 
   const handleSave = () => {
-    if (!selectedContactId || items.length === 0) return;
+    if (!selectedContactId || items.length === 0) {
+      alert('Please select a customer and add at least one item.');
+      return;
+    }
+
+    const hasIncompleteItems = items.some(item => !item.productId || !item.quantity || item.quantity <= 0);
+    if (hasIncompleteItems) {
+      alert('Please select a product and valid quantity for all line items.');
+      return;
+    }
     
     const newInvoice: Invoice = {
       id: Math.random().toString(36).substr(2, 9),
       invoiceNumber,
       date: format(new Date(), 'yyyy-MM-dd'),
-      dueDate: format(new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
+      dueDate,
       contactId: selectedContactId,
       items: items as InvoiceItem[],
       subtotal,
@@ -1085,21 +1147,24 @@ function NewInvoiceModal({ isOpen, onClose, products, contacts, onSave }: {
       <motion.div 
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="bg-white w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]"
       >
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="text-xl font-bold">Create New Invoice</h3>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+          <div>
+            <h3 className="text-xl font-bold text-slate-900">Create New Invoice</h3>
+            <p className="text-xs text-slate-500 font-medium">Generate a professional tax invoice for your customer</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X className="w-5 h-5 text-slate-400" /></button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-8 space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Customer</label>
               <select 
                 value={selectedContactId}
                 onChange={(e) => setSelectedContactId(e.target.value)}
-                className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20"
+                className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
               >
                 <option value="">Select Customer</option>
                 {contacts.filter(c => c.type === 'customer').map(c => (
@@ -1109,105 +1174,162 @@ function NewInvoiceModal({ isOpen, onClose, products, contacts, onSave }: {
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Invoice Number</label>
-              <input 
-                type="text" 
-                value={invoiceNumber}
-                onChange={(e) => setInvoiceNumber(e.target.value)}
-                className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20"
-              />
+              <div className="relative">
+                <FileText className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input 
+                  type="text" 
+                  value={invoiceNumber}
+                  onChange={(e) => setInvoiceNumber(e.target.value)}
+                  className="w-full bg-slate-50 border-none rounded-xl py-3 pl-11 pr-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Due Date</label>
+              <div className="relative">
+                <Calendar className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input 
+                  type="date" 
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className="w-full bg-slate-50 border-none rounded-xl py-3 pl-11 pr-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
+                />
+              </div>
             </div>
           </div>
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Items</label>
+              <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Invoice Items</h4>
               <button 
                 onClick={addItem}
-                className="text-emerald-600 text-sm font-bold flex items-center gap-1 hover:text-emerald-700"
+                className="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-emerald-100 transition-colors"
               >
-                <Plus className="w-4 h-4" /> Add Item
+                <Plus className="w-4 h-4" /> Add Line Item
               </button>
             </div>
 
-            <div className="space-y-3">
-              {items.map((item, index) => (
-                <div key={item.id} className="grid grid-cols-12 gap-3 items-end bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-                  <div className="col-span-5 space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Product</label>
-                    <select 
-                      value={item.productId || ''}
-                      onChange={(e) => updateItem(item.id!, 'productId', e.target.value)}
-                      className="w-full bg-white border-slate-200 rounded-lg text-sm"
-                    >
-                      <option value="">Select Product</option>
-                      {products.map(p => (
-                        <option key={p.id} value={p.id}>{p.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="col-span-2 space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Qty</label>
-                    <input 
-                      type="number" 
-                      value={item.quantity || ''}
-                      onChange={(e) => updateItem(item.id!, 'quantity', Number(e.target.value))}
-                      className="w-full bg-white border-slate-200 rounded-lg text-sm"
-                    />
-                  </div>
-                  <div className="col-span-2 space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Price</label>
-                    <input 
-                      type="number" 
-                      value={item.price || ''}
-                      onChange={(e) => updateItem(item.id!, 'price', Number(e.target.value))}
-                      className="w-full bg-white border-slate-200 rounded-lg text-sm"
-                    />
-                  </div>
-                  <div className="col-span-2 text-right pb-2">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Total</p>
-                    <p className="text-sm font-bold">{formatCurrency((item.amount || 0) + (item.gstAmount || 0))}</p>
-                  </div>
-                  <div className="col-span-1 flex justify-end pb-1">
-                    <button 
-                      onClick={() => removeItem(item.id!)}
-                      className="p-2 text-slate-300 hover:text-rose-500 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div className="border border-slate-100 rounded-2xl overflow-hidden">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-100">
+                    <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider w-[35%]">Product / Service</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider w-[12%]">Quantity</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider w-[15%]">Price</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider w-[10%]">GST %</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider w-[18%] text-right">Total</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider w-[10%]"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {items.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-12 text-center">
+                        <div className="flex flex-col items-center gap-2 text-slate-400">
+                          <Package className="w-8 h-8 opacity-20" />
+                          <p className="text-sm font-medium">No items added yet</p>
+                          <button onClick={addItem} className="text-xs text-emerald-600 font-bold hover:underline">Click here to add your first item</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    items.map((item) => (
+                      <tr key={item.id} className="group hover:bg-slate-50/30 transition-colors">
+                        <td className="px-4 py-4">
+                          <select 
+                            value={item.productId || ''}
+                            onChange={(e) => updateItem(item.id!, 'productId', e.target.value)}
+                            className="w-full bg-white border-slate-200 rounded-lg text-sm focus:ring-emerald-500/20 focus:border-emerald-500"
+                          >
+                            <option value="">Select Product</option>
+                            {products.map(p => (
+                              <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-4 py-4">
+                          <input 
+                            type="number" 
+                            min="1"
+                            value={item.quantity || ''}
+                            onChange={(e) => updateItem(item.id!, 'quantity', Number(e.target.value))}
+                            className="w-full bg-white border-slate-200 rounded-lg text-sm focus:ring-emerald-500/20 focus:border-emerald-500"
+                          />
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">₹</span>
+                            <input 
+                              type="number" 
+                              value={item.price || ''}
+                              onChange={(e) => updateItem(item.id!, 'price', Number(e.target.value))}
+                              className="w-full bg-white border-slate-200 rounded-lg text-sm pl-7 focus:ring-emerald-500/20 focus:border-emerald-500"
+                            />
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <select 
+                            value={item.gstRate || 0}
+                            onChange={(e) => updateItem(item.id!, 'gstRate', Number(e.target.value))}
+                            className="w-full bg-white border-slate-200 rounded-lg text-sm focus:ring-emerald-500/20 focus:border-emerald-500"
+                          >
+                            <option value={0}>0%</option>
+                            <option value={5}>5%</option>
+                            <option value={12}>12%</option>
+                            <option value={18}>18%</option>
+                            <option value={28}>28%</option>
+                          </select>
+                        </td>
+                        <td className="px-4 py-4 text-right">
+                          <div className="flex flex-col items-end">
+                            <span className="text-sm font-bold text-slate-900">{formatCurrency((item.amount || 0) + (item.gstAmount || 0))}</span>
+                            <span className="text-[10px] font-medium text-slate-400">GST: {formatCurrency(item.gstAmount || 0)}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-right">
+                          <button 
+                            onClick={() => removeItem(item.id!)}
+                            className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
 
-        <div className="p-8 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-          <div className="flex gap-8">
-            <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Subtotal</p>
-              <p className="text-lg font-bold text-slate-700">{formatCurrency(subtotal)}</p>
+        <div className="p-8 bg-slate-50 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-8 sticky bottom-0 z-10">
+          <div className="flex flex-wrap gap-8 justify-center md:justify-start">
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Subtotal</p>
+              <p className="text-xl font-bold text-slate-700">{formatCurrency(subtotal)}</p>
             </div>
-            <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total GST</p>
-              <p className="text-lg font-bold text-slate-700">{formatCurrency(totalGst)}</p>
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total GST</p>
+              <p className="text-xl font-bold text-slate-700">{formatCurrency(totalGst)}</p>
             </div>
-            <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Grand Total</p>
-              <p className="text-2xl font-black text-emerald-600">{formatCurrency(totalAmount)}</p>
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Grand Total</p>
+              <p className="text-3xl font-black text-emerald-600">{formatCurrency(totalAmount)}</p>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-4 w-full md:w-auto">
             <button 
               onClick={onClose}
-              className="px-6 py-3 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-100 transition-colors"
+              className="flex-1 md:flex-none px-8 py-4 rounded-2xl text-sm font-bold text-slate-500 hover:bg-slate-200 transition-colors"
             >
               Cancel
             </button>
             <button 
               onClick={handleSave}
-              className="px-8 py-3 bg-emerald-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all"
+              className="flex-1 md:flex-none px-10 py-4 bg-emerald-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 hover:-translate-y-0.5 transition-all active:translate-y-0"
             >
-              Save & Create
+              Generate Invoice
             </button>
           </div>
         </div>

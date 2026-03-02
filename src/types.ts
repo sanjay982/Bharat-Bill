@@ -58,6 +58,9 @@ export interface Tenant {
   billingCycle?: 'monthly' | 'yearly';
   nextBillingDate?: string;
   amount?: number;
+  invoicePrefix?: string;
+  invoiceStartingNumber?: number;
+  logoUrl?: string;
 }
 
 export interface AppConfig {
