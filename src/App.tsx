@@ -33,7 +33,8 @@ import {
   Info,
   XCircle,
   BarChart3,
-  PieChart as PieChartIcon
+  PieChart as PieChartIcon,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -56,6 +57,9 @@ import autoTable from 'jspdf-autotable';
 import 'jspdf-autotable';
 import { Product, Contact, Invoice, View, InvoiceItem, Tenant, AppConfig, Notification } from './types';
 import { cn, formatCurrency, calculateGST } from './utils';
+import { supabase } from './lib/supabase';
+import { Login } from './components/Login';
+import { ResetPassword } from './components/ResetPassword';
 
 // Mock Data
 const MOCK_TENANTS: Tenant[] = [
@@ -129,6 +133,9 @@ const CHART_DATA = [
 ];
 
 export default function App() {
+  const [user, setUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [isRecoveryMode, setIsRecoveryMode] = useState(false);
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [billingDuration, setBillingDuration] = useState<'monthly' | 'quarterly' | 'half-yearly' | 'yearly'>('monthly');
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
@@ -142,6 +149,29 @@ export default function App() {
   const [activeTenantId, setActiveTenantId] = useState('1');
   const [isNewInvoiceModalOpen, setIsNewInvoiceModalOpen] = useState(false);
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setAuthLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsRecoveryMode(true);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+  };
+
+  const isAdmin = user?.email === 'Sanju13july@gmail.com';
 
   useEffect(() => {
     const handleResize = () => {
@@ -723,9 +753,17 @@ export default function App() {
   const renderSettings = () => (
     <div className="space-y-6">
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-4 md:p-6 border-b border-slate-100">
-          <h2 className="text-xl font-bold">Admin Panel</h2>
-          <p className="text-sm text-slate-500">Manage your business profile and application settings</p>
+        <div className="p-4 md:p-6 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold">Admin Panel</h2>
+            <p className="text-sm text-slate-500">Manage your business profile and application settings</p>
+          </div>
+          {isAdmin && (
+            <div className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+              <ShieldCheck className="w-3 h-3" />
+              Admin Access
+            </div>
+          )}
         </div>
         
         <div className="p-4 md:p-8">
@@ -1064,7 +1102,7 @@ export default function App() {
         name: 'Free',
         price: 0,
         description: 'Perfect for small businesses starting out.',
-        features: ['Up to 50 invoices/month', 'Basic inventory', 'Single user', 'Standard support'],
+        features: ['Up to 20 invoices/month', 'Basic inventory', 'Single user', 'Standard support'],
         buttonText: 'Current Plan',
         isCurrent: true,
         color: 'slate'
@@ -1087,7 +1125,7 @@ export default function App() {
                billingDuration === 'quarterly' ? 13999 : 
                billingDuration === 'half-yearly' ? 24999 : 44999,
         description: 'Custom solutions for large enterprises.',
-        features: ['Everything in Pro', 'Multi-tenant support', 'Unlimited users', 'Dedicated account manager', 'Custom API access'],
+        features: ['Everything in Pro', 'Multi-tenant support', 'Up to 15 users', 'Dedicated account manager', 'Custom API access'],
         buttonText: 'Contact Sales',
         isCurrent: false,
         color: 'indigo'
@@ -1212,6 +1250,27 @@ export default function App() {
       </div>
     );
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-emerald-600 animate-spin" />
+      </div>
+    );
+  }
+
+  if (isRecoveryMode) {
+    return (
+      <ResetPassword 
+        onSuccess={() => setIsRecoveryMode(false)} 
+        onBack={() => setIsRecoveryMode(false)} 
+      />
+    );
+  }
+
+  if (!user) {
+    return <Login onLoginSuccess={setUser} />;
+  }
 
   return (
     <div className="min-h-screen flex bg-slate-50 relative">
@@ -1426,12 +1485,19 @@ export default function App() {
             </div>
             <div className="flex items-center gap-3 pl-6 border-l border-slate-100">
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-semibold">Sanju Kumar</p>
-                <p className="text-xs text-slate-500">Admin</p>
+                <p className="text-sm font-bold text-slate-900 truncate max-w-[150px]">{user?.email?.split('@')[0]}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{isAdmin ? 'Administrator' : 'User'}</p>
               </div>
-              <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">
-                <User className="w-6 h-6" />
+              <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 font-bold">
+                {user?.email?.[0].toUpperCase()}
               </div>
+              <button 
+                onClick={handleLogout}
+                className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all ml-2"
+                title="Logout"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
             </div>
           </div>
         </header>
