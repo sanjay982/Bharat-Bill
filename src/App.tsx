@@ -74,23 +74,25 @@ import { ResetPassword } from './components/ResetPassword';
 
 // Mock Data
 const MOCK_TENANTS: Tenant[] = [
-  { id: '1', name: 'BharatBill Solutions', gstin: '27ABCDE1234F1Z5', email: 'contact@bharatbill.com', phone: '+91 98765 43210', address: 'Mumbai', plan: 'enterprise', status: 'active', billingCycle: 'yearly', nextBillingDate: '2025-01-01', amount: 15000 },
+  { id: '1', name: 'Johar Billing Solutions', gstin: '27ABCDE1234F1Z5', email: 'contact@joharbilling.com', phone: '+91 98765 43210', address: 'Mumbai', plan: 'enterprise', status: 'active', billingCycle: 'yearly', nextBillingDate: '2025-01-01', amount: 15000 },
   { id: '2', name: 'South India Retail', gstin: '33FGHIJ5678K2Z6', email: 'billing@southretail.com', phone: '+91 88888 77777', address: 'Chennai', plan: 'pro', status: 'active', billingCycle: 'monthly', nextBillingDate: '2024-04-01', amount: 1200 },
   { id: '3', name: 'North Logistics', gstin: '07KLMNO9012P3Z7', email: 'ops@northlog.com', phone: '+91 77777 66666', address: 'Delhi', plan: 'standard', status: 'inactive' },
-  { id: '4', name: 'Test Tenant', gstin: '00TEST12345A1Z0', email: 'test@bharatbill.test', phone: '+91 00000 00000', address: 'Test City', plan: 'standard', status: 'active' }
+  { id: '4', name: 'Test Tenant', gstin: '00TEST12345A1Z0', email: 'test@joharbilling.test', phone: '+91 00000 00000', address: 'Test City', plan: 'standard', status: 'active' }
 ];
 
 const MOCK_PRODUCTS: Product[] = [
-  { id: '1', name: 'Premium Laptop', sku: 'LAP-001', hsnCode: '8471', price: 45000, stock: 15, unit: 'pcs', gstRate: 18 },
-  { id: '2', name: 'Wireless Mouse', sku: 'MOU-002', hsnCode: '8471', price: 1200, stock: 50, unit: 'pcs', gstRate: 12 },
-  { id: '3', name: 'Office Chair', sku: 'CHR-003', hsnCode: '9403', price: 8500, stock: 8, unit: 'pcs', gstRate: 18 },
-  { id: '4', name: 'LED Monitor', sku: 'MON-004', hsnCode: '8528', price: 12000, stock: 12, unit: 'pcs', gstRate: 18 },
+  { id: '1', tenantId: '1', name: 'Premium Laptop', sku: 'LAP-001', hsnCode: '8471', price: 45000, stock: 15, unit: 'pcs', gstRate: 18 },
+  { id: '2', tenantId: '1', name: 'Wireless Mouse', sku: 'MOU-002', hsnCode: '8471', price: 1200, stock: 50, unit: 'pcs', gstRate: 12 },
+  { id: '3', tenantId: '1', name: 'Office Chair', sku: 'CHR-003', hsnCode: '9403', price: 8500, stock: 8, unit: 'pcs', gstRate: 18 },
+  { id: '4', tenantId: '1', name: 'LED Monitor', sku: 'MON-004', hsnCode: '8528', price: 12000, stock: 12, unit: 'pcs', gstRate: 18 },
+  { id: '5', tenantId: '4', name: 'Test Product', sku: 'TST-001', hsnCode: '1234', price: 100, stock: 10, unit: 'pcs', gstRate: 5 },
 ];
 
 const MOCK_CONTACTS: Contact[] = [
-  { id: '1', name: 'Acme Corp', email: 'billing@acme.com', phone: '9876543210', gstin: '27AAAAA0000A1Z5', address: 'Mumbai, Maharashtra', type: 'customer' },
-  { id: '2', name: 'Tech Solutions', email: 'sales@techsol.com', phone: '9123456780', gstin: '29BBBBB1111B2Z6', address: 'Bangalore, Karnataka', type: 'customer' },
-  { id: '3', name: 'Global Suppliers', email: 'info@globalsupplies.com', phone: '9000000001', address: 'Delhi, NCR', type: 'vendor' },
+  { id: '1', tenantId: '1', name: 'Acme Corp', email: 'billing@acme.com', phone: '9876543210', gstin: '27AAAAA0000A1Z5', address: 'Mumbai, Maharashtra', type: 'customer' },
+  { id: '2', tenantId: '1', name: 'Tech Solutions', email: 'sales@techsol.com', phone: '9123456780', gstin: '29BBBBB1111B2Z6', address: 'Bangalore, Karnataka', type: 'customer' },
+  { id: '3', tenantId: '1', name: 'Global Suppliers', email: 'info@globalsupplies.com', phone: '9000000001', address: 'Delhi, NCR', type: 'vendor' },
+  { id: '4', tenantId: '4', name: 'Test Customer', email: 'test@customer.com', phone: '1111111111', address: 'Test City', type: 'customer' },
 ];
 
 const MOCK_INVOICES: Invoice[] = [
@@ -129,10 +131,11 @@ const MOCK_INVOICES: Invoice[] = [
 ];
 
 const MOCK_NOTIFICATIONS: AppNotification[] = [
-  { id: '1', title: 'Low Stock Alert', message: 'Premium Laptop stock is below 10 units.', time: '2 hours ago', read: false, type: 'warning', view: 'inventory' },
-  { id: '2', title: 'Payment Received', message: 'Invoice INV-2024-001 has been paid.', time: '5 hours ago', read: true, type: 'success', view: 'invoices' },
-  { id: '3', title: 'New Customer', message: 'Acme Corp added to your contact list.', time: '1 day ago', read: false, type: 'info', view: 'customers' },
-  { id: '4', title: 'System Update', message: 'BharatBill v2.1 is now live with new features.', time: '2 days ago', read: true, type: 'info' },
+  { id: '1', tenantId: '1', title: 'Low Stock Alert', message: 'Premium Laptop stock is below 10 units.', time: '2 hours ago', read: false, type: 'warning', view: 'inventory' },
+  { id: '2', tenantId: '1', title: 'Payment Received', message: 'Invoice INV-2024-001 has been paid.', time: '5 hours ago', read: true, type: 'success', view: 'invoices' },
+  { id: '3', tenantId: '1', title: 'New Customer', message: 'Acme Corp added to your contact list.', time: '1 day ago', read: false, type: 'info', view: 'customers' },
+  { id: '4', tenantId: '1', title: 'System Update', message: 'Johar Billing v2.1 is now live with new features.', time: '2 days ago', read: true, type: 'info' },
+  { id: '5', tenantId: '4', title: 'Welcome', message: 'Welcome to Johar Billing.', time: 'Just now', read: false, type: 'info' },
 ];
 
 const CHART_DATA = [
@@ -146,19 +149,25 @@ const CHART_DATA = [
 
 export default function App() {
   const [user, setUser] = useState<any>(null);
+  const isAdmin = user?.email?.toLowerCase() === 'sanju13july@gmail.com';
   const [authLoading, setAuthLoading] = useState(true);
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [billingDuration, setBillingDuration] = useState<'monthly' | 'quarterly' | 'half-yearly' | 'yearly'>('monthly');
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
-  const [contacts, setContacts] = useState<Contact[]>(MOCK_CONTACTS);
-  const [invoices, setInvoices] = useState<Invoice[]>(MOCK_INVOICES);
+  const [allProducts, setAllProducts] = useState<Product[]>(MOCK_PRODUCTS);
+  const [allContacts, setAllContacts] = useState<Contact[]>(MOCK_CONTACTS);
+  const [allInvoices, setAllInvoices] = useState<Invoice[]>(MOCK_INVOICES);
   const [tenants, setTenants] = useState<Tenant[]>(MOCK_TENANTS);
-  const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
+  const [allNotifications, setAllNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [activeTenantId, setActiveTenantId] = useState('1');
+
+  const products = allProducts.filter(p => p.tenantId === activeTenantId);
+  const contacts = allContacts.filter(c => c.tenantId === activeTenantId);
+  const invoices = allInvoices.filter(i => i.tenantId === activeTenantId);
+  const notifications = allNotifications.filter(n => n.tenantId === activeTenantId);
   const [isNewInvoiceModalOpen, setIsNewInvoiceModalOpen] = useState(false);
   const [isNewProductModalOpen, setIsNewProductModalOpen] = useState(false);
   const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false);
@@ -189,12 +198,16 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (user && !isAdmin) {
+      setActiveTenantId(user.id);
+    }
+  }, [user, isAdmin]);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
   };
-
-  const isAdmin = user?.email?.toLowerCase() === 'sanju13july@gmail.com';
 
   useEffect(() => {
     const handleResize = () => {
@@ -253,7 +266,7 @@ export default function App() {
   const [appConfig, setAppConfig] = useState<AppConfig>({
     primaryColor: '#10b981',
     logoUrl: '',
-    appName: 'BharatBill',
+    appName: 'Johar Billing',
     currency: 'INR',
     landingPage: {
       heroTitle: 'Modern Billing for Modern Bharat',
@@ -266,15 +279,15 @@ export default function App() {
     },
     loginAd: {
       enabled: true,
-      imageUrl: 'https://picsum.photos/seed/billing/800/600',
-      title: 'Upgrade to Pro Today!',
-      description: 'Get unlimited invoices and advanced reports.'
+      imageUrl: 'https://picsum.photos/seed/shop_man_smiling/800/600',
+      title: 'Simple. Fast. Reliable.',
+      description: 'Smart Billing, Easy Accounting! GST Invoicing, Inventory Management, Sales & Expense Reports, Multi-User Access.'
     }
   });
   const [businessProfile, setBusinessProfile] = useState({
-    name: 'BharatBill Solutions',
+    name: 'Johar Billing Solutions',
     gstin: '27ABCDE1234F1Z5',
-    email: 'contact@bharatbill.com',
+    email: 'contact@joharbilling.com',
     phone: '+91 98765 43210',
     address: '123 Business Park, Mumbai, Maharashtra, 400001',
     logo: ''
@@ -368,14 +381,14 @@ export default function App() {
 
   const deleteInvoice = (id: string) => {
     if (window.confirm('Are you sure you want to delete this invoice?')) {
-      setInvoices(invoices.filter(inv => inv.id !== id));
+      setAllInvoices(allInvoices.filter(inv => inv.id !== id));
       showToast('Invoice deleted successfully');
     }
   };
 
   const markNotificationAsRead = (id: string) => {
-    const notification = notifications.find(n => n.id === id);
-    setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));
+    const notification = allNotifications.find(n => n.id === id);
+    setAllNotifications(allNotifications.map(n => n.id === id ? { ...n, read: true } : n));
     
     if (notification?.view) {
       setCurrentView(notification.view);
@@ -386,6 +399,7 @@ export default function App() {
   const addNotification = (title: string, message: string, type: AppNotification['type'] = 'info', view?: View) => {
     const newNotification: AppNotification = {
       id: Math.random().toString(36).substr(2, 9),
+      tenantId: activeTenantId,
       title,
       message,
       time: 'Just now',
@@ -393,11 +407,11 @@ export default function App() {
       type,
       view
     };
-    setNotifications(prev => [newNotification, ...prev]);
+    setAllNotifications(prev => [newNotification, ...prev]);
   };
 
   const clearAllNotifications = () => {
-    setNotifications([]);
+    setAllNotifications(allNotifications.filter(n => n.tenantId !== activeTenantId));
     setIsNotificationsOpen(false);
   };
 
@@ -1571,7 +1585,7 @@ export default function App() {
         <div className="text-center space-y-4">
           <h2 className="text-3xl font-bold tracking-tight text-slate-900">Choose the right plan for your business</h2>
           <p className="text-slate-500 max-w-2xl mx-auto">
-            Scale your billing operations with BharatBill. Choose a plan that fits your current needs and upgrade as you grow.
+            Scale your billing operations with Johar Billing. Choose a plan that fits your current needs and upgrade as you grow.
           </p>
         </div>
 
@@ -2019,7 +2033,7 @@ export default function App() {
           contacts={contacts}
           activeTenantId={activeTenantId}
           onSave={(invoice) => {
-            setInvoices([invoice, ...invoices]);
+            setAllInvoices([invoice, ...allInvoices]);
             setIsNewInvoiceModalOpen(false);
             showToast('Invoice generated successfully!');
             addNotification(
@@ -2056,10 +2070,10 @@ export default function App() {
           editingProduct={editingProduct}
           onSave={(product) => {
             if (editingProduct) {
-              setProducts(products.map(p => p.id === product.id ? product : p));
+              setAllProducts(allProducts.map(p => p.id === product.id ? product : p));
               showToast('Product updated successfully');
             } else {
-              setProducts([product, ...products]);
+              setAllProducts([product, ...allProducts]);
               showToast('New product created successfully');
             }
             setIsNewProductModalOpen(false);
@@ -2071,10 +2085,10 @@ export default function App() {
           editingCustomer={editingCustomer}
           onSave={(customer) => {
             if (editingCustomer) {
-              setContacts(contacts.map(c => c.id === customer.id ? customer : c));
+              setAllContacts(allContacts.map(c => c.id === customer.id ? customer : c));
               showToast('Customer updated successfully');
             } else {
-              setContacts([customer, ...contacts]);
+              setAllContacts([customer, ...allContacts]);
               showToast('New customer created successfully');
             }
             setIsNewCustomerModalOpen(false);
