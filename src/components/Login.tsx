@@ -72,6 +72,17 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
     }
   };
 
+  const getYoutubeEmbedUrl = (url?: string) => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    const videoId = (match && match[2].length === 11) ? match[2] : null;
+    if (videoId) {
+      return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&showinfo=0&rel=0`;
+    }
+    return null;
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <motion.div 
@@ -84,14 +95,23 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
       >
         {adConfig?.enabled && (
           <div className="hidden md:block md:w-1/2 relative overflow-hidden bg-slate-900">
-            <img 
-              src={adConfig.imageUrl} 
-              alt="Promotion" 
-              className="absolute inset-0 w-full h-full object-cover opacity-60"
-              referrerPolicy="no-referrer"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent" />
-            <div className="absolute bottom-0 left-0 p-12 space-y-4">
+            {getYoutubeEmbedUrl(adConfig.youtubeUrl) ? (
+              <iframe
+                src={getYoutubeEmbedUrl(adConfig.youtubeUrl)!}
+                className="absolute inset-0 w-[300%] h-[300%] -left-[100%] -top-[100%] object-cover opacity-60 pointer-events-none"
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+              />
+            ) : (
+              <img 
+                src={adConfig.imageUrl} 
+                alt="Promotion" 
+                className="absolute inset-0 w-full h-full object-cover opacity-60"
+                referrerPolicy="no-referrer"
+              />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent pointer-events-none" />
+            <div className="absolute bottom-0 left-0 p-12 space-y-4 pointer-events-none">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/20 backdrop-blur-md border border-emerald-500/30 rounded-full text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
                 <ShieldCheck className="w-3 h-3" />
                 Special Offer
@@ -208,7 +228,15 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
               className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
             >
               <ShieldCheck className="w-5 h-5" />
-              <span>Bypass Login (Demo)</span>
+              <span>Bypass Login (Admin)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onLoginSuccess({ email: 'test@bharatbill.test', id: '4' })}
+              className="w-full bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 mt-2"
+            >
+              <ShieldCheck className="w-5 h-5" />
+              <span>Login as Test Tenant</span>
             </button>
           </form>
 

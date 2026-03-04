@@ -39,7 +39,13 @@ import {
   Layout,
   Megaphone,
   Key,
-  Lock
+  Lock,
+  Mail,
+  Phone,
+  MapPin,
+  Sparkles,
+  Star,
+  Shield
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -70,7 +76,8 @@ import { ResetPassword } from './components/ResetPassword';
 const MOCK_TENANTS: Tenant[] = [
   { id: '1', name: 'BharatBill Solutions', gstin: '27ABCDE1234F1Z5', email: 'contact@bharatbill.com', phone: '+91 98765 43210', address: 'Mumbai', plan: 'enterprise', status: 'active', billingCycle: 'yearly', nextBillingDate: '2025-01-01', amount: 15000 },
   { id: '2', name: 'South India Retail', gstin: '33FGHIJ5678K2Z6', email: 'billing@southretail.com', phone: '+91 88888 77777', address: 'Chennai', plan: 'pro', status: 'active', billingCycle: 'monthly', nextBillingDate: '2024-04-01', amount: 1200 },
-  { id: '3', name: 'North Logistics', gstin: '07KLMNO9012P3Z7', email: 'ops@northlog.com', phone: '+91 77777 66666', address: 'Delhi', plan: 'free', status: 'inactive' },
+  { id: '3', name: 'North Logistics', gstin: '07KLMNO9012P3Z7', email: 'ops@northlog.com', phone: '+91 77777 66666', address: 'Delhi', plan: 'standard', status: 'inactive' },
+  { id: '4', name: 'Test Tenant', gstin: '00TEST12345A1Z0', email: 'test@bharatbill.test', phone: '+91 00000 00000', address: 'Test City', plan: 'standard', status: 'active' }
 ];
 
 const MOCK_PRODUCTS: Product[] = [
@@ -153,9 +160,14 @@ export default function App() {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [activeTenantId, setActiveTenantId] = useState('1');
   const [isNewInvoiceModalOpen, setIsNewInvoiceModalOpen] = useState(false);
+  const [isNewProductModalOpen, setIsNewProductModalOpen] = useState(false);
+  const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false);
   const [isNewTenantModalOpen, setIsNewTenantModalOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [tenantSearchTerm, setTenantSearchTerm] = useState('');
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingCustomer, setEditingCustomer] = useState<Contact | null>(null);
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -404,7 +416,13 @@ export default function App() {
               className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 w-full md:w-64"
             />
           </div>
-          <button className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors">
+          <button 
+            onClick={() => {
+              setEditingCustomer(null);
+              setIsNewCustomerModalOpen(true);
+            }}
+            className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors"
+          >
             <Plus className="w-4 h-4" /> Add Customer
           </button>
         </div>
@@ -415,6 +433,7 @@ export default function App() {
             <tr className="bg-slate-50/50 border-y border-slate-100">
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Contact</th>
+              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Type</th>
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">GSTIN</th>
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Address</th>
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
@@ -435,11 +454,20 @@ export default function App() {
                   <p className="text-sm text-slate-600">{customer.email}</p>
                   <p className="text-xs text-slate-400">{customer.phone}</p>
                 </td>
+                <td className="px-6 py-4 text-sm text-slate-500 uppercase">{customer.customerType || 'b2b'}</td>
                 <td className="px-6 py-4 text-sm text-slate-500 font-mono">{customer.gstin || 'Unregistered'}</td>
                 <td className="px-6 py-4 text-sm text-slate-500 max-w-xs truncate">{customer.address}</td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-2">
-                    <button className="p-2 text-slate-400 hover:text-primary transition-colors"><Edit2 className="w-4 h-4" /></button>
+                    <button 
+                      onClick={() => {
+                        setEditingCustomer(customer);
+                        setIsNewCustomerModalOpen(true);
+                      }}
+                      className="p-2 text-slate-400 hover:text-primary transition-colors"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
                     <button className="p-2 text-slate-400 hover:text-danger transition-colors"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </td>
@@ -547,7 +575,18 @@ export default function App() {
             />
           </div>
           <button 
-            onClick={() => setIsNewInvoiceModalOpen(true)}
+            onClick={() => {
+              const currentTenant = tenants.find(t => t.id === activeTenantId);
+              const currentMonth = new Date().getMonth();
+              const currentYear = new Date().getFullYear();
+              const monthlyInvoices = invoices.filter(inv => 
+                inv.tenantId === activeTenantId && 
+                new Date(inv.date).getMonth() === currentMonth &&
+                new Date(inv.date).getFullYear() === currentYear
+              );
+              
+              setIsNewInvoiceModalOpen(true);
+            }}
             className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors"
           >
             <Plus className="w-4 h-4" /> New Invoice
@@ -560,6 +599,7 @@ export default function App() {
             <tr className="bg-slate-50/50 border-y border-slate-100">
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Invoice #</th>
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Customer</th>
+              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Type</th>
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Amount</th>
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
@@ -573,6 +613,7 @@ export default function App() {
                 <td className="px-6 py-4 text-sm text-slate-600">
                   {contacts.find(c => c.id === invoice.contactId)?.name || 'Unknown'}
                 </td>
+                <td className="px-6 py-4 text-sm text-slate-500 uppercase">{invoice.invoiceType || 'b2b'}</td>
                 <td className="px-6 py-4 text-sm text-slate-500">{format(new Date(invoice.date), 'dd MMM yyyy')}</td>
                 <td className="px-6 py-4 text-sm font-semibold text-slate-900">{formatCurrency(invoice.totalAmount)}</td>
                 <td className="px-6 py-4">
@@ -716,6 +757,19 @@ export default function App() {
                 className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
               />
             </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase">YouTube Video URL (Optional)</label>
+              <input 
+                type="text" 
+                value={appConfig.loginAd?.youtubeUrl || ''}
+                onChange={(e) => setAppConfig({
+                  ...appConfig, 
+                  loginAd: { ...appConfig.loginAd!, youtubeUrl: e.target.value }
+                })}
+                placeholder="https://www.youtube.com/watch?v=..."
+                className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
+              />
+            </div>
             <div className="md:col-span-2 space-y-2">
               <label className="text-xs font-bold text-slate-500 uppercase">Ad Description</label>
               <textarea 
@@ -821,10 +875,10 @@ export default function App() {
                         className={cn(
                           "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border-none focus:ring-0 cursor-pointer",
                           tenant.plan === 'enterprise' ? "bg-indigo-50 text-indigo-700" : 
-                          tenant.plan === 'pro' ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-700"
+                          tenant.plan === 'pro' ? "bg-emerald-50 text-emerald-700" : "bg-blue-50 text-blue-700"
                         )}
                       >
-                        <option value="free">Free</option>
+                        <option value="standard">Standard</option>
                         <option value="pro">Pro</option>
                         <option value="enterprise">Enterprise</option>
                       </select>
@@ -978,7 +1032,13 @@ export default function App() {
               className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 w-full md:w-64"
             />
           </div>
-          <button className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors">
+          <button 
+            onClick={() => {
+              setEditingProduct(null);
+              setIsNewProductModalOpen(true);
+            }}
+            className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors"
+          >
             <Plus className="w-4 h-4" /> Add Product
           </button>
         </div>
@@ -1015,7 +1075,15 @@ export default function App() {
                 <td className="px-6 py-4 text-sm text-slate-500">{product.gstRate}%</td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-2">
-                    <button className="p-2 text-slate-400 hover:text-primary transition-colors"><Edit2 className="w-4 h-4" /></button>
+                    <button 
+                      onClick={() => {
+                        setEditingProduct(product);
+                        setIsNewProductModalOpen(true);
+                      }}
+                      className="p-2 text-slate-400 hover:text-primary transition-colors"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
                     <button className="p-2 text-slate-400 hover:text-danger transition-colors"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </td>
@@ -1050,6 +1118,38 @@ export default function App() {
               <div>
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6">Business Profile</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="text-xs font-semibold text-slate-600">Business Logo (250x250)</label>
+                    <div className="flex items-center gap-4">
+                      {businessProfile.logo && (
+                        <img src={businessProfile.logo} alt="Logo" className="w-16 h-16 rounded-lg object-cover" />
+                      )}
+                      <input 
+                        type="file" 
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              const img = new Image();
+                              img.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                canvas.width = 250;
+                                canvas.height = 250;
+                                const ctx = canvas.getContext('2d');
+                                ctx?.drawImage(img, 0, 0, 250, 250);
+                                setBusinessProfile({...businessProfile, logo: canvas.toDataURL('image/png')});
+                              };
+                              img.src = event.target?.result as string;
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
+                      />
+                    </div>
+                  </div>
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-slate-600">Business Name</label>
                     <input 
@@ -1120,59 +1220,61 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="pt-6 border-t border-slate-100">
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6">App Customization (Admin)</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-slate-600">App Name</label>
-                    <input 
-                      type="text" 
-                      value={appConfig.appName}
-                      onChange={(e) => setAppConfig({...appConfig, appName: e.target.value})}
-                      className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-slate-600">Primary Theme Color</label>
-                    <div className="flex gap-3">
-                      <input 
-                        type="color" 
-                        value={appConfig.primaryColor}
-                        onChange={(e) => setAppConfig({...appConfig, primaryColor: e.target.value})}
-                        className="w-12 h-12 rounded-xl border-none p-1 bg-slate-50 cursor-pointer"
-                      />
+              {isAdmin && (
+                <div className="pt-6 border-t border-slate-100">
+                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6">App Customization (Admin)</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-slate-600">App Name</label>
                       <input 
                         type="text" 
-                        value={appConfig.primaryColor}
-                        onChange={(e) => setAppConfig({...appConfig, primaryColor: e.target.value})}
-                        className="flex-1 bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-mono uppercase"
+                        value={appConfig.appName}
+                        onChange={(e) => setAppConfig({...appConfig, appName: e.target.value})}
+                        className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
                       />
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-slate-600">Logo URL</label>
-                    <input 
-                      type="text" 
-                      value={appConfig.logoUrl}
-                      onChange={(e) => setAppConfig({...appConfig, logoUrl: e.target.value})}
-                      placeholder="https://example.com/logo.png"
-                      className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-slate-600">Default Currency</label>
-                    <select 
-                      value={appConfig.currency}
-                      onChange={(e) => setAppConfig({...appConfig, currency: e.target.value})}
-                      className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
-                    >
-                      <option value="INR">INR (₹)</option>
-                      <option value="USD">USD ($)</option>
-                      <option value="EUR">EUR (€)</option>
-                    </select>
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-slate-600">Primary Theme Color</label>
+                      <div className="flex gap-3">
+                        <input 
+                          type="color" 
+                          value={appConfig.primaryColor}
+                          onChange={(e) => setAppConfig({...appConfig, primaryColor: e.target.value})}
+                          className="w-12 h-12 rounded-xl border-none p-1 bg-slate-50 cursor-pointer"
+                        />
+                        <input 
+                          type="text" 
+                          value={appConfig.primaryColor}
+                          onChange={(e) => setAppConfig({...appConfig, primaryColor: e.target.value})}
+                          className="flex-1 bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-mono uppercase"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-slate-600">Logo URL</label>
+                      <input 
+                        type="text" 
+                        value={appConfig.logoUrl}
+                        onChange={(e) => setAppConfig({...appConfig, logoUrl: e.target.value})}
+                        placeholder="https://example.com/logo.png"
+                        className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-slate-600">Default Currency</label>
+                      <select 
+                        value={appConfig.currency}
+                        onChange={(e) => setAppConfig({...appConfig, currency: e.target.value})}
+                        className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
+                      >
+                        <option value="INR">INR (₹)</option>
+                        <option value="USD">USD ($)</option>
+                        <option value="EUR">EUR (€)</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               <div className="pt-6 border-t border-slate-100">
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6">Security & Account</h3>
@@ -1433,21 +1535,19 @@ export default function App() {
   const renderPlans = () => {
     const plans = [
       {
-        name: 'Free',
-        price: 0,
-        description: 'Perfect for small businesses starting out.',
-        features: ['Up to 20 invoices/month', 'Basic inventory', 'Single user', 'Standard support'],
-        buttonText: 'Current Plan',
+        name: 'Standard',
+        price: 5999,
+        description: 'For small businesses. Perfect for kirana shops & small traders.',
+        features: ['300 invoices/month', 'GST invoices & reports', 'Basic inventory', 'Up to 3 users', 'Email support'],
+        buttonText: 'Upgrade to Standard',
         isCurrent: true,
-        color: 'slate'
+        color: 'blue'
       },
       {
         name: 'Pro',
-        price: billingDuration === 'monthly' ? 1999 : 
-               billingDuration === 'quarterly' ? 5499 : 
-               billingDuration === 'half-yearly' ? 9999 : 17999,
-        description: 'Advanced features for growing businesses.',
-        features: ['Unlimited invoices', 'Advanced inventory', 'Up to 5 users', 'Priority support', 'GST reports'],
+        price: 12999,
+        description: 'For growing businesses. Good for retailers & small wholesalers.',
+        features: ['1,500 invoices/month', 'Advanced inventory', 'GST reports + export', 'Up to 8 users', 'Priority support'],
         buttonText: 'Upgrade to Pro',
         isCurrent: false,
         color: 'emerald',
@@ -1455,75 +1555,36 @@ export default function App() {
       },
       {
         name: 'Enterprise',
-        price: billingDuration === 'monthly' ? 4999 : 
-               billingDuration === 'quarterly' ? 13999 : 
-               billingDuration === 'half-yearly' ? 24999 : 44999,
-        description: 'Custom solutions for large enterprises.',
-        features: ['Everything in Pro', 'Multi-tenant support', 'Up to 15 users', 'Dedicated account manager', 'Custom API access'],
+        price: 29999,
+        description: 'For serious businesses. Large distributors & multi-branch businesses.',
+        features: ['5,000 invoices/month', 'Multi-tenant support', 'Up to 25 users', 'Dedicated account manager', 'Custom API access'],
         buttonText: 'Contact Sales',
         isCurrent: false,
         color: 'indigo'
       }
     ];
 
-    const getDurationLabel = () => {
-      switch(billingDuration) {
-        case 'monthly': return '/ month';
-        case 'quarterly': return '/ quarter';
-        case 'half-yearly': return '/ 6 months';
-        case 'yearly': return '/ year';
-      }
-    };
-
-    const getSavingsLabel = () => {
-      switch(billingDuration) {
-        case 'monthly': return null;
-        case 'quarterly': return 'Save 8%';
-        case 'half-yearly': return 'Save 16%';
-        case 'yearly': return 'Save 25%';
-      }
-    };
+    const getDurationLabel = () => '/ year';
 
     return (
-      <div className="space-y-8 max-w-6xl mx-auto py-4">
+      <div className="space-y-8 max-w-7xl mx-auto py-4">
         <div className="text-center space-y-4">
           <h2 className="text-3xl font-bold tracking-tight text-slate-900">Choose the right plan for your business</h2>
           <p className="text-slate-500 max-w-2xl mx-auto">
             Scale your billing operations with BharatBill. Choose a plan that fits your current needs and upgrade as you grow.
           </p>
-          
-          <div className="flex justify-center pt-4">
-            <div className="bg-slate-100 p-1 rounded-xl flex items-center gap-1">
-              {(['monthly', 'quarterly', 'half-yearly', 'yearly'] as const).map((duration) => (
-                <button
-                  key={duration}
-                  onClick={() => setBillingDuration(duration)}
-                  className={cn(
-                    "px-4 py-2 text-xs font-bold rounded-lg transition-all capitalize",
-                    billingDuration === duration 
-                      ? "bg-white text-emerald-600 shadow-sm" 
-                      : "text-slate-500 hover:text-slate-700"
-                  )}
-                >
-                  {duration}
-                </button>
-              ))}
-            </div>
-          </div>
-          {getSavingsLabel() && (
-            <p className="text-emerald-600 text-xs font-bold animate-bounce">
-              {getSavingsLabel()} with {billingDuration} billing!
-            </p>
-          )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {plans.map((plan) => (
             <div 
               key={plan.name}
               className={cn(
-                "relative bg-white rounded-3xl border p-8 flex flex-col h-full transition-all hover:shadow-xl hover:-translate-y-1",
-                plan.popular ? "border-emerald-500 shadow-lg ring-1 ring-emerald-500/20" : "border-slate-100"
+                "relative rounded-3xl border border-slate-100 p-8 flex flex-col h-full transition-all hover:shadow-xl hover:-translate-y-1",
+                plan.name === 'Standard' && "bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200",
+                plan.name === 'Pro' && "bg-gradient-to-br from-amber-100 to-amber-200 border-amber-300",
+                plan.name === 'Enterprise' && "bg-gradient-to-br from-sky-100 to-blue-200 border-blue-300",
+                plan.popular ? "shadow-lg ring-1 ring-emerald-500/20" : ""
               )}
             >
               {plan.popular && (
@@ -1532,9 +1593,14 @@ export default function App() {
                 </div>
               )}
               
-              <div className="mb-8">
-                <h3 className="text-xl font-bold text-slate-900 mb-2">{plan.name}</h3>
-                <p className="text-sm text-slate-500 leading-relaxed">{plan.description}</p>
+              <div className="mb-8 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">{plan.name}</h3>
+                  <p className="text-sm text-slate-500 leading-relaxed">{plan.description}</p>
+                </div>
+                {plan.name === 'Standard' && <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 5, ease: "linear" }}><Sparkles className="w-6 h-6 text-blue-500" /></motion.div>}
+                {plan.name === 'Pro' && <motion.div animate={{ rotate: [0, -10, 10, 0] }} transition={{ repeat: Infinity, duration: 2 }}><Star className="w-6 h-6 text-amber-500" /></motion.div>}
+                {plan.name === 'Enterprise' && <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ repeat: Infinity, duration: 1 }}><Shield className="w-6 h-6 text-sky-500" /></motion.div>}
               </div>
 
               <div className="mb-8">
@@ -1572,12 +1638,32 @@ export default function App() {
           ))}
         </div>
 
+        <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100">
+          <h3 className="text-xl font-bold text-slate-900 mb-6">📈 Optional Add-On Revenue</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { title: '+500 invoices/month', price: '₹1,999/year' },
+              { title: '+2 users', price: '₹1,499/year' },
+              { title: 'SMS/WhatsApp credits', price: 'Extra charge' },
+              { title: 'Extra GSTIN / branch', price: '₹2,999/year' }
+            ].map((addon) => (
+              <div key={addon.title} className="bg-white p-4 rounded-xl border border-slate-100">
+                <p className="text-sm font-bold text-slate-900">{addon.title}</p>
+                <p className="text-sm text-emerald-600 font-bold">{addon.price}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-2 text-center md:text-left">
             <h4 className="text-lg font-bold text-slate-900">Need a custom plan?</h4>
             <p className="text-sm text-slate-500">We offer specialized pricing for high-volume businesses and government organizations.</p>
           </div>
-          <button className="bg-white text-slate-900 border border-slate-200 px-8 py-3 rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors">
+          <button 
+            onClick={() => setIsChatOpen(true)}
+            className="bg-white text-slate-900 border border-slate-200 px-8 py-3 rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors"
+          >
             Talk to an Expert
           </button>
         </div>
@@ -1660,8 +1746,10 @@ export default function App() {
             <NavItem icon={<Layout />} label="CMS" active={currentView === 'cms'} onClick={() => { setCurrentView('cms'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
           )}
           <NavItem icon={<CreditCard />} label="Plans" active={currentView === 'plans'} onClick={() => { setCurrentView('plans'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
-          <NavItem icon={<CreditCard />} label="Billing" active={currentView === 'billing'} onClick={() => { setCurrentView('billing'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
-          <NavItem icon={<ShoppingCart />} label="Purchases" active={false} onClick={() => {}} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
+          {isAdmin && (
+            <NavItem icon={<CreditCard />} label="Billing" active={currentView === 'billing'} onClick={() => { setCurrentView('billing'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
+          )}
+          <NavItem icon={<ShoppingCart />} label="Purchases" active={currentView === 'purchases'} onClick={() => { setCurrentView('purchases'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
           <div className="pt-4 pb-2">
             <div className={cn("h-px bg-white/10 mx-2", !isSidebarOpen && !isMobileMenuOpen && "hidden")} />
           </div>
@@ -1855,10 +1943,11 @@ export default function App() {
             >
               {currentView === 'dashboard' && renderDashboard()}
               {currentView === 'invoices' && renderInvoices()}
+              {currentView === 'purchases' && <div className="p-8 text-center text-slate-500">Purchases module is under development.</div>}
               {currentView === 'inventory' && renderInventory()}
               {currentView === 'customers' && renderCustomers()}
               {currentView === 'tenants' && isAdmin && renderTenants()}
-              {currentView === 'billing' && renderBilling()}
+              {currentView === 'billing' && isAdmin && renderBilling()}
               {currentView === 'plans' && renderPlans()}
               {currentView === 'reports' && renderReports()}
               {currentView === 'cms' && isAdmin && renderCMS()}
@@ -1947,17 +2036,68 @@ export default function App() {
           isOpen={isNewTenantModalOpen}
           onClose={() => setIsNewTenantModalOpen(false)}
           editingTenant={editingTenant}
-          onSave={(tenant) => {
+          onSave={(tenant, password) => {
             if (editingTenant) {
               setTenants(tenants.map(t => t.id === tenant.id ? tenant : t));
               showToast('Tenant updated successfully');
             } else {
               setTenants([tenant, ...tenants]);
               showToast('New tenant created successfully');
+              if (password) {
+                alert(`User created for ${tenant.name}\nEmail: ${tenant.email}\nPassword: ${password}\n\n(In a real app, this would be sent via email)`);
+              }
             }
             setIsNewTenantModalOpen(false);
           }}
         />
+        <NewProductModal
+          isOpen={isNewProductModalOpen}
+          onClose={() => setIsNewProductModalOpen(false)}
+          editingProduct={editingProduct}
+          onSave={(product) => {
+            if (editingProduct) {
+              setProducts(products.map(p => p.id === product.id ? product : p));
+              showToast('Product updated successfully');
+            } else {
+              setProducts([product, ...products]);
+              showToast('New product created successfully');
+            }
+            setIsNewProductModalOpen(false);
+          }}
+        />
+        <NewCustomerModal
+          isOpen={isNewCustomerModalOpen}
+          onClose={() => setIsNewCustomerModalOpen(false)}
+          editingCustomer={editingCustomer}
+          onSave={(customer) => {
+            if (editingCustomer) {
+              setContacts(contacts.map(c => c.id === customer.id ? customer : c));
+              showToast('Customer updated successfully');
+            } else {
+              setContacts([customer, ...contacts]);
+              showToast('New customer created successfully');
+            }
+            setIsNewCustomerModalOpen(false);
+          }}
+        />
+
+        {/* Chat Window */}
+        {isChatOpen && (
+          <div className="fixed bottom-6 right-6 w-80 h-96 bg-white rounded-2xl shadow-2xl border border-slate-100 flex flex-col z-50">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+              <h4 className="font-bold text-slate-900">Chat with Expert</h4>
+              <button onClick={() => setIsChatOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 p-4 overflow-y-auto text-sm text-slate-600">
+              <p>Hello! How can I help you today?</p>
+            </div>
+            <div className="p-4 border-t border-slate-100">
+              <input type="text" placeholder="Type a message..." className="w-full p-2 bg-slate-50 rounded-lg text-sm" />
+            </div>
+          </div>
+        )}
 
         {/* Toast Notification */}
         <AnimatePresence>
@@ -2096,7 +2236,8 @@ function NewInvoiceModal({ isOpen, onClose, products, contacts, activeTenantId, 
       totalGst,
       totalAmount,
       status: 'unpaid',
-      type: 'sale'
+      type: 'sale',
+      invoiceType: contacts.find(c => c.id === selectedContactId)?.customerType || 'b2b'
     };
     
     onSave(newInvoice);
@@ -2393,14 +2534,15 @@ function NewTenantModal({ isOpen, onClose, editingTenant, onSave }: {
   isOpen: boolean, 
   onClose: () => void, 
   editingTenant: Tenant | null,
-  onSave: (tenant: Tenant) => void 
+  onSave: (tenant: Tenant, password?: string) => void 
 }) {
   const [name, setName] = useState('');
   const [gstin, setGstin] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
-  const [plan, setPlan] = useState<'free' | 'pro' | 'enterprise'>('free');
+  const [password, setPassword] = useState('');
+  const [plan, setPlan] = useState<'standard' | 'pro' | 'enterprise'>('standard');
 
   useEffect(() => {
     if (editingTenant) {
@@ -2410,19 +2552,21 @@ function NewTenantModal({ isOpen, onClose, editingTenant, onSave }: {
       setPhone(editingTenant.phone);
       setAddress(editingTenant.address);
       setPlan(editingTenant.plan);
+      setPassword(''); // Don't pre-fill password for editing
     } else {
       setName('');
       setGstin('');
       setEmail('');
       setPhone('');
       setAddress('');
-      setPlan('free');
+      setPlan('standard');
+      setPassword('');
     }
   }, [editingTenant, isOpen]);
 
   const handleSave = () => {
-    if (!name || !gstin || !email) {
-      alert('Please fill in all required fields (Name, GSTIN, Email).');
+    if (!name || !gstin || !email || (!editingTenant && !password)) {
+      alert('Please fill in all required fields (Name, GSTIN, Email, Password).');
       return;
     }
 
@@ -2437,7 +2581,7 @@ function NewTenantModal({ isOpen, onClose, editingTenant, onSave }: {
       status: editingTenant?.status || 'active'
     };
 
-    onSave(tenant);
+    onSave(tenant, password);
   };
 
   if (!isOpen) return null;
@@ -2511,6 +2655,19 @@ function NewTenantModal({ isOpen, onClose, editingTenant, onSave }: {
                 />
               </div>
             </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Password {!editingTenant && '*'}</label>
+              <div className="relative">
+                <Lock className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input 
+                  type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter secure password"
+                  className="w-full bg-slate-50 border-none rounded-xl py-3 pl-11 pr-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -2530,7 +2687,7 @@ function NewTenantModal({ isOpen, onClose, editingTenant, onSave }: {
           <div className="space-y-2">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Subscription Plan</label>
             <div className="grid grid-cols-3 gap-4">
-              {(['free', 'pro', 'enterprise'] as const).map((p) => (
+              {(['standard', 'pro', 'enterprise'] as const).map((p) => (
                 <button
                   key={p}
                   onClick={() => setPlan(p)}
@@ -2561,6 +2718,225 @@ function NewTenantModal({ isOpen, onClose, editingTenant, onSave }: {
           >
             {editingTenant ? 'Save Changes' : 'Create Tenant'}
           </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function NewCustomerModal({ isOpen, onClose, editingCustomer, onSave }: { 
+  isOpen: boolean, 
+  onClose: () => void, 
+  editingCustomer: Contact | null,
+  onSave: (customer: Contact) => void 
+}) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [gstin, setGstin] = useState('');
+  const [address, setAddress] = useState('');
+  const [customerType, setCustomerType] = useState<'b2b' | 'b2c'>('b2b');
+
+  useEffect(() => {
+    if (editingCustomer) {
+      setName(editingCustomer.name);
+      setEmail(editingCustomer.email);
+      setPhone(editingCustomer.phone);
+      setGstin(editingCustomer.gstin || '');
+      setAddress(editingCustomer.address);
+      setCustomerType(editingCustomer.customerType || 'b2b');
+    } else {
+      setName('');
+      setEmail('');
+      setPhone('');
+      setGstin('');
+      setAddress('');
+      setCustomerType('b2b');
+    }
+  }, [editingCustomer, isOpen]);
+
+  const handleSave = () => {
+    if (!name || !email) {
+      alert('Please fill in all required fields (Name, Email).');
+      return;
+    }
+
+    const customer: Contact = {
+      id: editingCustomer?.id || Math.random().toString(36).substr(2, 9),
+      name,
+      email,
+      phone,
+      gstin,
+      address,
+      type: 'customer',
+      customerType,
+      tenantId: '1'
+    };
+
+    onSave(customer);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+      <motion.div 
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+      >
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+          <div>
+            <h3 className="text-xl font-bold text-slate-900">{editingCustomer ? 'Edit Customer' : 'Add New Customer'}</h3>
+            <p className="text-xs text-slate-500 font-medium">Configure customer details</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X className="w-5 h-5 text-slate-400" /></button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-8 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Name *</label>
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Email *</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Phone</label>
+              <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">GSTIN</label>
+              <input type="text" value={gstin} onChange={(e) => setGstin(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Customer Type</label>
+              <select value={customerType} onChange={(e) => setCustomerType(e.target.value as 'b2b' | 'b2c')} className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium">
+                <option value="b2b">B2B</option>
+                <option value="b2c">B2C</option>
+              </select>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Address</label>
+            <textarea value={address} onChange={(e) => setAddress(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium" rows={3} />
+          </div>
+        </div>
+
+        <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+          <button onClick={onClose} className="px-6 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-200 transition-colors">Cancel</button>
+          <button onClick={handleSave} className="px-6 py-2 rounded-xl text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">Save Customer</button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function NewProductModal({ isOpen, onClose, editingProduct, onSave }: { 
+  isOpen: boolean, 
+  onClose: () => void, 
+  editingProduct: Product | null,
+  onSave: (product: Product) => void 
+}) {
+  const [name, setName] = useState('');
+  const [sku, setSku] = useState('');
+  const [hsnCode, setHsnCode] = useState('');
+  const [price, setPrice] = useState('');
+  const [stock, setStock] = useState('');
+  const [unit, setUnit] = useState('pcs');
+  const [gstRate, setGstRate] = useState('');
+
+  useEffect(() => {
+    if (editingProduct) {
+      setName(editingProduct.name);
+      setSku(editingProduct.sku);
+      setHsnCode(editingProduct.hsnCode);
+      setPrice(editingProduct.price.toString());
+      setStock(editingProduct.stock.toString());
+      setUnit(editingProduct.unit);
+      setGstRate(editingProduct.gstRate.toString());
+    } else {
+      setName('');
+      setSku('');
+      setHsnCode('');
+      setPrice('');
+      setStock('');
+      setUnit('pcs');
+      setGstRate('');
+    }
+  }, [editingProduct, isOpen]);
+
+  const handleSave = () => {
+    if (!name || !sku || !price || !gstRate) {
+      alert('Please fill in all required fields (Name, SKU, Price, GST Rate).');
+      return;
+    }
+
+    const product: Product = {
+      id: editingProduct?.id || Math.random().toString(36).substr(2, 9),
+      name,
+      sku,
+      hsnCode,
+      price: parseFloat(price),
+      stock: parseInt(stock) || 0,
+      unit,
+      gstRate: parseFloat(gstRate)
+    };
+
+    onSave(product);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+      <motion.div 
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+      >
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+          <div>
+            <h3 className="text-xl font-bold text-slate-900">{editingProduct ? 'Edit Product' : 'Add New Product'}</h3>
+            <p className="text-xs text-slate-500 font-medium">Configure product details</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X className="w-5 h-5 text-slate-400" /></button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-8 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Product Name *</label>
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">SKU *</label>
+              <input type="text" value={sku} onChange={(e) => setSku(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">HSN Code</label>
+              <input type="text" value={hsnCode} onChange={(e) => setHsnCode(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Price *</label>
+              <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Stock</label>
+              <input type="number" value={stock} onChange={(e) => setStock(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">GST Rate (%) *</label>
+              <input type="number" value={gstRate} onChange={(e) => setGstRate(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium" />
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+          <button onClick={onClose} className="px-6 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-200 transition-colors">Cancel</button>
+          <button onClick={handleSave} className="px-6 py-2 rounded-xl text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">Save Product</button>
         </div>
       </motion.div>
     </div>

@@ -17,6 +17,7 @@ export interface Contact {
   gstin?: string;
   address: string;
   type: 'customer' | 'vendor';
+  customerType?: 'b2b' | 'b2c';
 }
 
 export interface InvoiceItem {
@@ -45,6 +46,7 @@ export interface Invoice {
   status: 'paid' | 'unpaid' | 'overdue';
   notes?: string;
   type: 'sale' | 'purchase';
+  invoiceType?: 'b2b' | 'b2c';
 }
 
 export interface Tenant {
@@ -54,7 +56,7 @@ export interface Tenant {
   email: string;
   phone: string;
   address: string;
-  plan: 'free' | 'pro' | 'enterprise';
+  plan: 'standard' | 'pro' | 'enterprise';
   status: 'active' | 'inactive';
   billingCycle?: 'monthly' | 'yearly';
   nextBillingDate?: string;
@@ -83,6 +85,7 @@ export interface LandingPageConfig {
 export interface LoginAdConfig {
   enabled: boolean;
   imageUrl: string;
+  youtubeUrl?: string;
   link?: string;
   title?: string;
   description?: string;
