@@ -153,6 +153,9 @@ export default function App() {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [activeTenantId, setActiveTenantId] = useState('1');
   const [isNewInvoiceModalOpen, setIsNewInvoiceModalOpen] = useState(false);
+  const [isNewTenantModalOpen, setIsNewTenantModalOpen] = useState(false);
+  const [tenantSearchTerm, setTenantSearchTerm] = useState('');
+  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -323,6 +326,32 @@ export default function App() {
     } else {
       doc.save(`${invoice.invoiceNumber}.pdf`);
     }
+  };
+
+  const downloadReport = (reportName: string) => {
+    showToast(`Generating ${reportName}...`);
+    
+    // Simulate report generation
+    setTimeout(() => {
+      const content = `Report: ${reportName}\nGenerated on: ${new Date().toLocaleString()}\n\nSample Data:\nCategory,Value\nElectronics,45%\nFurniture,25%\nServices,20%\nOther,10%`;
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${reportName.toLowerCase().replace(/\s+/g, '_')}_${format(new Date(), 'yyyyMMdd')}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      showToast(`${reportName} downloaded successfully!`);
+      addNotification(
+        'Report Downloaded',
+        `The ${reportName} has been generated and downloaded.`,
+        'success',
+        'reports'
+      );
+    }, 1500);
   };
 
   const deleteInvoice = (id: string) => {
@@ -714,119 +743,154 @@ export default function App() {
     </div>
   );
 
-  const renderTenants = () => (
-    <div className="space-y-6">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-4 md:p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <h2 className="text-xl font-bold">Tenant Management</h2>
-            <p className="text-sm text-slate-500">Manage multi-industry business accounts</p>
-          </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <button 
-              onClick={() => setCurrentView('billing')}
-              className="text-sm font-bold text-emerald-600 hover:text-emerald-700 flex items-center justify-center gap-1"
-            >
-              <CreditCard className="w-4 h-4" /> Billing Overview
-            </button>
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input 
-                type="text" 
-                placeholder="Search tenants..." 
-                className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 w-full md:w-64"
-              />
+  const renderTenants = () => {
+    const filteredTenants = tenants.filter(t => 
+      t.name.toLowerCase().includes(tenantSearchTerm.toLowerCase()) ||
+      t.gstin.toLowerCase().includes(tenantSearchTerm.toLowerCase()) ||
+      t.email.toLowerCase().includes(tenantSearchTerm.toLowerCase())
+    );
+
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="p-4 md:p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <h2 className="text-xl font-bold">Tenant Management</h2>
+              <p className="text-sm text-slate-500">Manage multi-industry business accounts</p>
             </div>
-            <button className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors">
-              <Plus className="w-4 h-4" /> New Tenant
-            </button>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <button 
+                onClick={() => setCurrentView('billing')}
+                className="text-sm font-bold text-emerald-600 hover:text-emerald-700 flex items-center justify-center gap-1"
+              >
+                <CreditCard className="w-4 h-4" /> Billing Overview
+              </button>
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input 
+                  type="text" 
+                  placeholder="Search tenants..." 
+                  value={tenantSearchTerm}
+                  onChange={(e) => setTenantSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 w-full md:w-64"
+                />
+              </div>
+              <button 
+                onClick={() => {
+                  setEditingTenant(null);
+                  setIsNewTenantModalOpen(true);
+                }}
+                className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors"
+              >
+                <Plus className="w-4 h-4" /> New Tenant
+              </button>
+            </div>
           </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/50 border-y border-slate-100">
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Business Name</th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Plan</th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">GSTIN</th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {tenants.map(tenant => (
-                <tr key={tenant.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600">
-                        <Building2 className="w-5 h-5" />
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/50 border-y border-slate-100">
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Business Name</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Plan</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">GSTIN</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredTenants.map(tenant => (
+                  <tr key={tenant.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600">
+                          <Building2 className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-900">{tenant.name}</p>
+                          <p className="text-xs text-slate-500">{tenant.email}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-bold text-slate-900">{tenant.name}</p>
-                        <p className="text-xs text-slate-500">{tenant.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <select 
-                      value={tenant.plan}
-                      onChange={(e) => {
-                        setTenants(tenants.map(t => t.id === tenant.id ? { ...t, plan: e.target.value as any } : t));
-                        showToast(`Plan updated for ${tenant.name}`);
-                      }}
-                      className={cn(
-                        "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border-none focus:ring-0 cursor-pointer",
-                        tenant.plan === 'enterprise' ? "bg-indigo-50 text-indigo-700" : 
-                        tenant.plan === 'pro' ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-700"
-                      )}
-                    >
-                      <option value="free">Free</option>
-                      <option value="pro">Pro</option>
-                      <option value="enterprise">Enterprise</option>
-                    </select>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-500 font-mono">{tenant.gstin}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <span className={cn(
-                        "w-2 h-2 rounded-full",
-                        tenant.status === 'active' ? "bg-emerald-500" : "bg-slate-300"
-                      )} />
-                      <span className="text-sm text-slate-600 capitalize">{tenant.status}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => setActiveTenantId(tenant.id)}
+                    </td>
+                    <td className="px-6 py-4">
+                      <select 
+                        value={tenant.plan}
+                        onChange={(e) => {
+                          setTenants(tenants.map(t => t.id === tenant.id ? { ...t, plan: e.target.value as any } : t));
+                          showToast(`Plan updated for ${tenant.name}`);
+                        }}
                         className={cn(
-                          "text-xs font-bold px-3 py-1.5 rounded-lg transition-all",
-                          activeTenantId === tenant.id ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border-none focus:ring-0 cursor-pointer",
+                          tenant.plan === 'enterprise' ? "bg-indigo-50 text-indigo-700" : 
+                          tenant.plan === 'pro' ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-700"
                         )}
                       >
-                        {activeTenantId === tenant.id ? 'Active' : 'Switch'}
-                      </button>
-                      <button 
-                        onClick={() => {
-                          const password = Math.random().toString(36).slice(-8);
-                          alert(`User created for ${tenant.name}\nEmail: ${tenant.email}\nPassword: ${password}\n\n(In a real app, this would be sent via email)`);
-                        }}
-                        className="p-2 text-slate-400 hover:text-emerald-600 transition-colors"
-                        title="Create User Credentials"
-                      >
-                        <Key className="w-4 h-4" />
-                      </button>
-                      <button className="p-2 text-slate-400 hover:text-primary transition-colors"><Edit2 className="w-4 h-4" /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        <option value="free">Free</option>
+                        <option value="pro">Pro</option>
+                        <option value="enterprise">Enterprise</option>
+                      </select>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-500 font-mono">{tenant.gstin}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <span className={cn(
+                          "w-2 h-2 rounded-full",
+                          tenant.status === 'active' ? "bg-emerald-500" : "bg-slate-300"
+                        )} />
+                        <span className="text-sm text-slate-600 capitalize">{tenant.status}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => setActiveTenantId(tenant.id)}
+                          className={cn(
+                            "text-xs font-bold px-3 py-1.5 rounded-lg transition-all",
+                            activeTenantId === tenant.id ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          )}
+                        >
+                          {activeTenantId === tenant.id ? 'Active' : 'Switch'}
+                        </button>
+                        <button 
+                          onClick={() => {
+                            const password = Math.random().toString(36).slice(-8);
+                            alert(`User created for ${tenant.name}\nEmail: ${tenant.email}\nPassword: ${password}\n\n(In a real app, this would be sent via email)`);
+                          }}
+                          className="p-2 text-slate-400 hover:text-emerald-600 transition-colors"
+                          title="Create User Credentials"
+                        >
+                          <Key className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setEditingTenant(tenant);
+                            setIsNewTenantModalOpen(true);
+                          }}
+                          className="p-2 text-slate-400 hover:text-primary transition-colors"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => {
+                            if (window.confirm(`Are you sure you want to delete ${tenant.name}?`)) {
+                              setTenants(tenants.filter(t => t.id !== tenant.id));
+                              showToast('Tenant deleted successfully');
+                            }
+                          }}
+                          className="p-2 text-slate-400 hover:text-rose-600 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderBilling = () => (
     <div className="space-y-6">
@@ -1186,7 +1250,10 @@ export default function App() {
               <div>
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6">Quick Actions</h3>
                 <div className="space-y-3">
-                  <button className="w-full flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors group">
+                  <button 
+                    onClick={() => downloadReport('All Data Export')}
+                    className="w-full flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors group"
+                  >
                     <div className="flex items-center gap-3">
                       <Download className="w-5 h-5 text-slate-400 group-hover:text-primary" />
                       <span className="text-sm font-medium text-slate-700">Export All Data</span>
@@ -1322,7 +1389,12 @@ export default function App() {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
           <h3 className="text-lg font-semibold">Available Reports</h3>
-          <button className="text-sm font-bold text-emerald-600 hover:text-emerald-700">Export All</button>
+          <button 
+            onClick={() => downloadReport('Consolidated Reports')}
+            className="text-sm font-bold text-emerald-600 hover:text-emerald-700"
+          >
+            Export All
+          </button>
         </div>
         <div className="divide-y divide-slate-100">
           {[
@@ -1344,7 +1416,10 @@ export default function App() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 bg-slate-100 text-slate-500 rounded-md">{report.type}</span>
-                <button className="p-2 text-slate-400 hover:text-emerald-600 transition-colors">
+                <button 
+                  onClick={() => downloadReport(report.name)}
+                  className="p-2 text-slate-400 hover:text-emerald-600 transition-colors"
+                >
                   <Download className="w-4 h-4" />
                 </button>
               </div>
@@ -1867,6 +1942,23 @@ export default function App() {
           }}
         />
 
+        {/* New Tenant Modal */}
+        <NewTenantModal
+          isOpen={isNewTenantModalOpen}
+          onClose={() => setIsNewTenantModalOpen(false)}
+          editingTenant={editingTenant}
+          onSave={(tenant) => {
+            if (editingTenant) {
+              setTenants(tenants.map(t => t.id === tenant.id ? tenant : t));
+              showToast('Tenant updated successfully');
+            } else {
+              setTenants([tenant, ...tenants]);
+              showToast('New tenant created successfully');
+            }
+            setIsNewTenantModalOpen(false);
+          }}
+        />
+
         {/* Toast Notification */}
         <AnimatePresence>
           {toast && (
@@ -2291,6 +2383,184 @@ function NewInvoiceModal({ isOpen, onClose, products, contacts, activeTenantId, 
               Generate
             </button>
           </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function NewTenantModal({ isOpen, onClose, editingTenant, onSave }: { 
+  isOpen: boolean, 
+  onClose: () => void, 
+  editingTenant: Tenant | null,
+  onSave: (tenant: Tenant) => void 
+}) {
+  const [name, setName] = useState('');
+  const [gstin, setGstin] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [plan, setPlan] = useState<'free' | 'pro' | 'enterprise'>('free');
+
+  useEffect(() => {
+    if (editingTenant) {
+      setName(editingTenant.name);
+      setGstin(editingTenant.gstin);
+      setEmail(editingTenant.email);
+      setPhone(editingTenant.phone);
+      setAddress(editingTenant.address);
+      setPlan(editingTenant.plan);
+    } else {
+      setName('');
+      setGstin('');
+      setEmail('');
+      setPhone('');
+      setAddress('');
+      setPlan('free');
+    }
+  }, [editingTenant, isOpen]);
+
+  const handleSave = () => {
+    if (!name || !gstin || !email) {
+      alert('Please fill in all required fields (Name, GSTIN, Email).');
+      return;
+    }
+
+    const tenant: Tenant = {
+      id: editingTenant?.id || Math.random().toString(36).substr(2, 9),
+      name,
+      gstin,
+      email,
+      phone,
+      address,
+      plan,
+      status: editingTenant?.status || 'active'
+    };
+
+    onSave(tenant);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+      <motion.div 
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+      >
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+          <div>
+            <h3 className="text-xl font-bold text-slate-900">{editingTenant ? 'Edit Tenant' : 'Create New Tenant'}</h3>
+            <p className="text-xs text-slate-500 font-medium">Configure business account details</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X className="w-5 h-5 text-slate-400" /></button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-8 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Business Name *</label>
+              <div className="relative">
+                <Building2 className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input 
+                  type="text" 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Acme Corp"
+                  className="w-full bg-slate-50 border-none rounded-xl py-3 pl-11 pr-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">GSTIN *</label>
+              <div className="relative">
+                <ShieldCheck className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input 
+                  type="text" 
+                  value={gstin}
+                  onChange={(e) => setGstin(e.target.value)}
+                  placeholder="27ABCDE1234F1Z5"
+                  className="w-full bg-slate-50 border-none rounded-xl py-3 pl-11 pr-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium font-mono"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Email Address *</label>
+              <div className="relative">
+                <Mail className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="contact@business.com"
+                  className="w-full bg-slate-50 border-none rounded-xl py-3 pl-11 pr-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Phone Number</label>
+              <div className="relative">
+                <Phone className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input 
+                  type="tel" 
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+91 98765 43210"
+                  className="w-full bg-slate-50 border-none rounded-xl py-3 pl-11 pr-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Business Address</label>
+            <div className="relative">
+              <MapPin className="w-4 h-4 absolute left-4 top-4 text-slate-400" />
+              <textarea 
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="Full registered address..."
+                rows={3}
+                className="w-full bg-slate-50 border-none rounded-xl py-3 pl-11 pr-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium resize-none"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Subscription Plan</label>
+            <div className="grid grid-cols-3 gap-4">
+              {(['free', 'pro', 'enterprise'] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPlan(p)}
+                  className={cn(
+                    "py-3 rounded-xl text-sm font-bold border-2 transition-all capitalize",
+                    plan === p 
+                      ? "bg-emerald-50 border-emerald-500 text-emerald-700" 
+                      : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
+                  )}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+          <button 
+            onClick={onClose}
+            className="px-6 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-200 transition-colors"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={handleSave}
+            className="px-8 py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all"
+          >
+            {editingTenant ? 'Save Changes' : 'Create Tenant'}
+          </button>
         </div>
       </motion.div>
     </div>
