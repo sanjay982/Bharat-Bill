@@ -34,7 +34,12 @@ import {
   XCircle,
   BarChart3,
   PieChart as PieChartIcon,
-  Loader2
+  Loader2,
+  Image as ImageIcon,
+  Layout,
+  Megaphone,
+  Key,
+  Lock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -55,7 +60,7 @@ import { format } from 'date-fns';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import 'jspdf-autotable';
-import { Product, Contact, Invoice, View, InvoiceItem, Tenant, AppConfig, Notification } from './types';
+import { Product, Contact, Invoice, View, InvoiceItem, Tenant, AppConfig, AppNotification } from './types';
 import { cn, formatCurrency, calculateGST } from './utils';
 import { supabase } from './lib/supabase';
 import { Login } from './components/Login';
@@ -116,7 +121,7 @@ const MOCK_INVOICES: Invoice[] = [
   }
 ];
 
-const MOCK_NOTIFICATIONS: Notification[] = [
+const MOCK_NOTIFICATIONS: AppNotification[] = [
   { id: '1', title: 'Low Stock Alert', message: 'Premium Laptop stock is below 10 units.', time: '2 hours ago', read: false, type: 'warning', view: 'inventory' },
   { id: '2', title: 'Payment Received', message: 'Invoice INV-2024-001 has been paid.', time: '5 hours ago', read: true, type: 'success', view: 'invoices' },
   { id: '3', title: 'New Customer', message: 'Acme Corp added to your contact list.', time: '1 day ago', read: false, type: 'info', view: 'customers' },
@@ -144,11 +149,14 @@ export default function App() {
   const [contacts, setContacts] = useState<Contact[]>(MOCK_CONTACTS);
   const [invoices, setInvoices] = useState<Invoice[]>(MOCK_INVOICES);
   const [tenants, setTenants] = useState<Tenant[]>(MOCK_TENANTS);
-  const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [activeTenantId, setActiveTenantId] = useState('1');
   const [isNewInvoiceModalOpen, setIsNewInvoiceModalOpen] = useState(false);
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -171,7 +179,7 @@ export default function App() {
     setUser(null);
   };
 
-  const isAdmin = user?.email === 'Sanju13july@gmail.com';
+  const isAdmin = user?.email?.toLowerCase() === 'sanju13july@gmail.com';
 
   useEffect(() => {
     const handleResize = () => {
@@ -188,11 +196,65 @@ export default function App() {
     setTimeout(() => setToast(null), 3000);
   };
 
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (user?.id === 'bypass-user') {
+      showToast('Security Feature: Password updates require a valid authentication session. Please sign in with your email and password to use this feature.', 'error');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      showToast('Passwords do not match', 'error');
+      return;
+    }
+    if (newPassword.length < 6) {
+      showToast('Password must be at least 6 characters', 'error');
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Auth session is missing. Please sign in again.');
+      }
+
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+      showToast('Password updated successfully');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update password', 'error');
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
   const [appConfig, setAppConfig] = useState<AppConfig>({
     primaryColor: '#10b981',
     logoUrl: '',
     appName: 'BharatBill',
-    currency: 'INR'
+    currency: 'INR',
+    landingPage: {
+      heroTitle: 'Modern Billing for Modern Bharat',
+      heroSubtitle: 'The most powerful GST billing and inventory management system for small and medium businesses.',
+      features: [
+        { title: 'GST Ready', description: 'Generate GST compliant invoices in seconds.', icon: 'ShieldCheck' },
+        { title: 'Inventory', description: 'Real-time stock tracking and alerts.', icon: 'Package' },
+        { title: 'Multi-tenant', description: 'Manage multiple businesses from one dashboard.', icon: 'Building2' }
+      ]
+    },
+    loginAd: {
+      enabled: true,
+      imageUrl: 'https://picsum.photos/seed/billing/800/600',
+      title: 'Upgrade to Pro Today!',
+      description: 'Get unlimited invoices and advanced reports.'
+    }
   });
   const [businessProfile, setBusinessProfile] = useState({
     name: 'BharatBill Solutions',
@@ -280,8 +342,8 @@ export default function App() {
     }
   };
 
-  const addNotification = (title: string, message: string, type: Notification['type'] = 'info', view?: View) => {
-    const newNotification: Notification = {
+  const addNotification = (title: string, message: string, type: AppNotification['type'] = 'info', view?: View) => {
+    const newNotification: AppNotification = {
       id: Math.random().toString(36).substr(2, 9),
       title,
       message,
@@ -522,95 +584,246 @@ export default function App() {
     </div>
   );
 
-  const renderTenants = () => (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-      <div className="p-4 md:p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <h2 className="text-xl font-bold">Tenant Management</h2>
-          <p className="text-sm text-slate-500">Manage multi-industry business accounts</p>
-        </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <button 
-            onClick={() => setCurrentView('billing')}
-            className="text-sm font-bold text-emerald-600 hover:text-emerald-700 flex items-center justify-center gap-1"
-          >
-            <CreditCard className="w-4 h-4" /> Billing Overview
-          </button>
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Search tenants..." 
-              className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 w-full md:w-64"
-            />
+  const renderCMS = () => (
+    <div className="space-y-8">
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">Landing Page Editor</h2>
+            <p className="text-sm text-slate-500">Customize how your public landing page looks</p>
           </div>
-          <button className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors">
-            <Plus className="w-4 h-4" /> New Tenant
-          </button>
+          <Layout className="w-6 h-6 text-emerald-600" />
+        </div>
+        <div className="p-8 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase">Hero Title</label>
+              <input 
+                type="text" 
+                value={appConfig.landingPage?.heroTitle}
+                onChange={(e) => setAppConfig({
+                  ...appConfig, 
+                  landingPage: { ...appConfig.landingPage!, heroTitle: e.target.value }
+                })}
+                className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase">Hero Subtitle</label>
+              <input 
+                type="text" 
+                value={appConfig.landingPage?.heroSubtitle}
+                onChange={(e) => setAppConfig({
+                  ...appConfig, 
+                  landingPage: { ...appConfig.landingPage!, heroSubtitle: e.target.value }
+                })}
+                className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
+              />
+            </div>
+            <div className="md:col-span-2 space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase">Hero Image URL</label>
+              <input 
+                type="text" 
+                value={appConfig.landingPage?.heroImage}
+                onChange={(e) => setAppConfig({
+                  ...appConfig, 
+                  landingPage: { ...appConfig.landingPage!, heroImage: e.target.value }
+                })}
+                placeholder="https://example.com/hero.png"
+                className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
+              />
+            </div>
+          </div>
         </div>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-slate-50/50 border-y border-slate-100">
-              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Business Name</th>
-              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Plan</th>
-              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">GSTIN</th>
-              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {tenants.map(tenant => (
-              <tr key={tenant.id} className="hover:bg-slate-50/50 transition-colors">
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600">
-                      <Building2 className="w-5 h-5" />
+
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">Login Screen Ad Manager</h2>
+            <p className="text-sm text-slate-500">Manage promotional content on the login screen</p>
+          </div>
+          <Megaphone className="w-6 h-6 text-emerald-600" />
+        </div>
+        <div className="p-8 space-y-6">
+          <div className="flex items-center gap-4 mb-4">
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={appConfig.loginAd?.enabled}
+                onChange={(e) => setAppConfig({
+                  ...appConfig, 
+                  loginAd: { ...appConfig.loginAd!, enabled: e.target.checked }
+                })}
+                className="sr-only peer" 
+              />
+              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+              <span className="ml-3 text-sm font-medium text-slate-700">Enable Login Ad</span>
+            </label>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase">Ad Title</label>
+              <input 
+                type="text" 
+                value={appConfig.loginAd?.title}
+                onChange={(e) => setAppConfig({
+                  ...appConfig, 
+                  loginAd: { ...appConfig.loginAd!, title: e.target.value }
+                })}
+                className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase">Ad Image URL (PNG, GIF, JPG)</label>
+              <input 
+                type="text" 
+                value={appConfig.loginAd?.imageUrl}
+                onChange={(e) => setAppConfig({
+                  ...appConfig, 
+                  loginAd: { ...appConfig.loginAd!, imageUrl: e.target.value }
+                })}
+                className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
+              />
+            </div>
+            <div className="md:col-span-2 space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase">Ad Description</label>
+              <textarea 
+                rows={3}
+                value={appConfig.loginAd?.description}
+                onChange={(e) => setAppConfig({
+                  ...appConfig, 
+                  loginAd: { ...appConfig.loginAd!, description: e.target.value }
+                })}
+                className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium resize-none"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <button 
+          onClick={() => showToast('CMS configurations saved successfully!')}
+          className="bg-emerald-600 text-white px-8 py-3 rounded-xl text-sm font-bold shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all"
+        >
+          Save All Changes
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderTenants = () => (
+    <div className="space-y-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="p-4 md:p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h2 className="text-xl font-bold">Tenant Management</h2>
+            <p className="text-sm text-slate-500">Manage multi-industry business accounts</p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <button 
+              onClick={() => setCurrentView('billing')}
+              className="text-sm font-bold text-emerald-600 hover:text-emerald-700 flex items-center justify-center gap-1"
+            >
+              <CreditCard className="w-4 h-4" /> Billing Overview
+            </button>
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input 
+                type="text" 
+                placeholder="Search tenants..." 
+                className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 w-full md:w-64"
+              />
+            </div>
+            <button className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors">
+              <Plus className="w-4 h-4" /> New Tenant
+            </button>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/50 border-y border-slate-100">
+                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Business Name</th>
+                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Plan</th>
+                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">GSTIN</th>
+                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {tenants.map(tenant => (
+                <tr key={tenant.id} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600">
+                        <Building2 className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-900">{tenant.name}</p>
+                        <p className="text-xs text-slate-500">{tenant.email}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-900">{tenant.name}</p>
-                      <p className="text-xs text-slate-500">{tenant.email}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className={cn(
-                    "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                    tenant.plan === 'enterprise' ? "bg-indigo-50 text-indigo-700" : 
-                    tenant.plan === 'pro' ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-700"
-                  )}>
-                    {tenant.plan}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-slate-500 font-mono">{tenant.gstin}</td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <span className={cn(
-                      "w-2 h-2 rounded-full",
-                      tenant.status === 'active' ? "bg-emerald-500" : "bg-slate-300"
-                    )} />
-                    <span className="text-sm text-slate-600 capitalize">{tenant.status}</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => setActiveTenantId(tenant.id)}
+                  </td>
+                  <td className="px-6 py-4">
+                    <select 
+                      value={tenant.plan}
+                      onChange={(e) => {
+                        setTenants(tenants.map(t => t.id === tenant.id ? { ...t, plan: e.target.value as any } : t));
+                        showToast(`Plan updated for ${tenant.name}`);
+                      }}
                       className={cn(
-                        "text-xs font-bold px-3 py-1.5 rounded-lg transition-all",
-                        activeTenantId === tenant.id ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border-none focus:ring-0 cursor-pointer",
+                        tenant.plan === 'enterprise' ? "bg-indigo-50 text-indigo-700" : 
+                        tenant.plan === 'pro' ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-700"
                       )}
                     >
-                      {activeTenantId === tenant.id ? 'Active' : 'Switch'}
-                    </button>
-                    <button className="p-2 text-slate-400 hover:text-primary transition-colors"><Edit2 className="w-4 h-4" /></button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                      <option value="free">Free</option>
+                      <option value="pro">Pro</option>
+                      <option value="enterprise">Enterprise</option>
+                    </select>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-500 font-mono">{tenant.gstin}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <span className={cn(
+                        "w-2 h-2 rounded-full",
+                        tenant.status === 'active' ? "bg-emerald-500" : "bg-slate-300"
+                      )} />
+                      <span className="text-sm text-slate-600 capitalize">{tenant.status}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => setActiveTenantId(tenant.id)}
+                        className={cn(
+                          "text-xs font-bold px-3 py-1.5 rounded-lg transition-all",
+                          activeTenantId === tenant.id ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        )}
+                      >
+                        {activeTenantId === tenant.id ? 'Active' : 'Switch'}
+                      </button>
+                      <button 
+                        onClick={() => {
+                          const password = Math.random().toString(36).slice(-8);
+                          alert(`User created for ${tenant.name}\nEmail: ${tenant.email}\nPassword: ${password}\n\n(In a real app, this would be sent via email)`);
+                        }}
+                        className="p-2 text-slate-400 hover:text-emerald-600 transition-colors"
+                        title="Create User Credentials"
+                      >
+                        <Key className="w-4 h-4" />
+                      </button>
+                      <button className="p-2 text-slate-400 hover:text-primary transition-colors"><Edit2 className="w-4 h-4" /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
@@ -897,9 +1110,53 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="flex justify-end pt-6">
+              <div className="pt-6 border-t border-slate-100">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6">Security & Account</h3>
+                <form onSubmit={handleUpdatePassword} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-600">New Password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input 
+                        type="password" 
+                        required
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full bg-slate-50 border-none rounded-xl py-3 pl-10 pr-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-600">Confirm New Password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input 
+                        type="password" 
+                        required
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full bg-slate-50 border-none rounded-xl py-3 pl-10 pr-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="md:col-span-2 flex justify-end">
+                    <button 
+                      type="submit"
+                      disabled={passwordLoading}
+                      className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-800 transition-all disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {passwordLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
+                      Update Password
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <div className="flex justify-end pt-6 border-t border-slate-100">
                 <button className="bg-emerald-600 text-white px-8 py-3 rounded-xl text-sm font-bold shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all">
-                  Save Changes
+                  Save All Settings
                 </button>
               </div>
             </div>
@@ -943,16 +1200,18 @@ export default function App() {
                     </div>
                     <ChevronRight className="w-4 h-4 text-slate-300" />
                   </button>
-                  <button 
-                    onClick={() => setCurrentView('tenants')}
-                    className="w-full flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Building2 className="w-5 h-5 text-slate-400 group-hover:text-primary" />
-                      <span className="text-sm font-medium text-slate-700">Manage Tenants</span>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-slate-300" />
-                  </button>
+                  {isAdmin && (
+                    <button 
+                      onClick={() => setCurrentView('tenants')}
+                      className="w-full flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Building2 className="w-5 h-5 text-slate-400 group-hover:text-primary" />
+                        <span className="text-sm font-medium text-slate-700">Manage Tenants</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-slate-300" />
+                    </button>
+                  )}
                   <button className="w-full flex items-center justify-between p-4 bg-rose-50 border border-rose-100 rounded-2xl hover:bg-rose-100 transition-colors group">
                     <div className="flex items-center gap-3">
                       <Trash2 className="w-5 h-5 text-rose-400" />
@@ -1269,7 +1528,7 @@ export default function App() {
   }
 
   if (!user) {
-    return <Login onLoginSuccess={setUser} />;
+    return <Login onLoginSuccess={setUser} adConfig={appConfig.loginAd} />;
   }
 
   return (
@@ -1318,8 +1577,13 @@ export default function App() {
           <NavItem icon={<FileText />} label="Invoices" active={currentView === 'invoices'} onClick={() => { setCurrentView('invoices'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
           <NavItem icon={<Package />} label="Inventory" active={currentView === 'inventory'} onClick={() => { setCurrentView('inventory'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
           <NavItem icon={<Users />} label="Customers" active={currentView === 'customers'} onClick={() => { setCurrentView('customers'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
-          <NavItem icon={<Building2 />} label="Tenants" active={currentView === 'tenants'} onClick={() => { setCurrentView('tenants'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
+          {isAdmin && (
+            <NavItem icon={<Building2 />} label="Tenants" active={currentView === 'tenants'} onClick={() => { setCurrentView('tenants'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
+          )}
           <NavItem icon={<BarChart3 />} label="Reports" active={currentView === 'reports'} onClick={() => { setCurrentView('reports'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
+          {isAdmin && (
+            <NavItem icon={<Layout />} label="CMS" active={currentView === 'cms'} onClick={() => { setCurrentView('cms'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
+          )}
           <NavItem icon={<CreditCard />} label="Plans" active={currentView === 'plans'} onClick={() => { setCurrentView('plans'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
           <NavItem icon={<CreditCard />} label="Billing" active={currentView === 'billing'} onClick={() => { setCurrentView('billing'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
           <NavItem icon={<ShoppingCart />} label="Purchases" active={false} onClick={() => {}} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
@@ -1358,21 +1622,23 @@ export default function App() {
           </div>
           
           <div className="flex items-center gap-3 md:gap-6">
-            <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100">
-              <Building2 className="w-4 h-4 text-emerald-600" />
-              <div className="flex flex-col">
-                <span className="text-[10px] font-bold text-slate-400 uppercase leading-none">Active Tenant</span>
-                <span className="text-xs font-bold text-slate-700 leading-tight">
-                  {tenants.find(t => t.id === activeTenantId)?.name || 'Select Tenant'}
-                </span>
+            {isAdmin && (
+              <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100">
+                <Building2 className="w-4 h-4 text-emerald-600" />
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase leading-none">Active Tenant</span>
+                  <span className="text-xs font-bold text-slate-700 leading-tight">
+                    {tenants.find(t => t.id === activeTenantId)?.name || 'Select Tenant'}
+                  </span>
+                </div>
+                <button 
+                  onClick={() => setCurrentView('tenants')}
+                  className="ml-2 p-1 hover:bg-slate-200 rounded-md transition-colors"
+                >
+                  <Filter className="w-3 h-3 text-slate-400" />
+                </button>
               </div>
-              <button 
-                onClick={() => setCurrentView('tenants')}
-                className="ml-2 p-1 hover:bg-slate-200 rounded-md transition-colors"
-              >
-                <Filter className="w-3 h-3 text-slate-400" />
-              </button>
-            </div>
+            )}
             <div className="relative hidden md:block">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input 
@@ -1516,10 +1782,11 @@ export default function App() {
               {currentView === 'invoices' && renderInvoices()}
               {currentView === 'inventory' && renderInventory()}
               {currentView === 'customers' && renderCustomers()}
-              {currentView === 'tenants' && renderTenants()}
+              {currentView === 'tenants' && isAdmin && renderTenants()}
               {currentView === 'billing' && renderBilling()}
               {currentView === 'plans' && renderPlans()}
               {currentView === 'reports' && renderReports()}
+              {currentView === 'cms' && isAdmin && renderCMS()}
               {currentView === 'settings' && renderSettings()}
               {currentView === 'notifications' && (
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">

@@ -69,9 +69,26 @@ export interface AppConfig {
   logoUrl: string;
   appName: string;
   currency: string;
+  landingPage?: LandingPageConfig;
+  loginAd?: LoginAdConfig;
 }
 
-export interface Notification {
+export interface LandingPageConfig {
+  heroTitle: string;
+  heroSubtitle: string;
+  heroImage?: string;
+  features: { title: string; description: string; icon: string }[];
+}
+
+export interface LoginAdConfig {
+  enabled: boolean;
+  imageUrl: string;
+  link?: string;
+  title?: string;
+  description?: string;
+}
+
+export interface AppNotification {
   id: string;
   title: string;
   message: string;
@@ -81,4 +98,4 @@ export interface Notification {
   view?: View;
 }
 
-export type View = 'dashboard' | 'invoices' | 'inventory' | 'customers' | 'vendors' | 'settings' | 'tenants' | 'billing' | 'plans' | 'notifications' | 'reports';
+export type View = 'dashboard' | 'invoices' | 'inventory' | 'customers' | 'vendors' | 'settings' | 'tenants' | 'billing' | 'plans' | 'notifications' | 'reports' | 'cms';

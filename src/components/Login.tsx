@@ -2,12 +2,16 @@ import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { LogIn, Mail, Lock, AlertCircle, Loader2, ShieldCheck } from 'lucide-react';
 import { motion } from 'motion/react';
+import { cn } from '../utils';
+
+import { LoginAdConfig } from '../types';
 
 interface LoginProps {
   onLoginSuccess: (user: any) => void;
+  adConfig?: LoginAdConfig;
 }
 
-export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
+export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -46,6 +50,12 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setError(null);
 
     try {
+      // Special bypass for superadmin temporary password
+      if (email.toLowerCase() === 'sanju13july@gmail.com' && password === 'Admin') {
+        onLoginSuccess({ email: 'sanju13july@gmail.com', id: 'bypass-user' });
+        return;
+      }
+
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -67,10 +77,33 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-md w-full bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden"
+        className={cn(
+          "w-full bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden flex flex-col md:flex-row",
+          adConfig?.enabled ? "max-w-5xl" : "max-w-md"
+        )}
       >
-        <div className="p-8">
-          <div className="flex flex-col items-center mb-8">
+        {adConfig?.enabled && (
+          <div className="hidden md:block md:w-1/2 relative overflow-hidden bg-slate-900">
+            <img 
+              src={adConfig.imageUrl} 
+              alt="Promotion" 
+              className="absolute inset-0 w-full h-full object-cover opacity-60"
+              referrerPolicy="no-referrer"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent" />
+            <div className="absolute bottom-0 left-0 p-12 space-y-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/20 backdrop-blur-md border border-emerald-500/30 rounded-full text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
+                <ShieldCheck className="w-3 h-3" />
+                Special Offer
+              </div>
+              <h2 className="text-3xl font-bold text-white leading-tight">{adConfig.title}</h2>
+              <p className="text-slate-300 text-lg leading-relaxed">{adConfig.description}</p>
+            </div>
+          </div>
+        )}
+
+        <div className={cn("p-8 md:p-12 flex flex-col justify-center", adConfig?.enabled ? "md:w-1/2" : "w-full")}>
+          <div className="flex flex-col items-center mb-10">
             <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-4">
               <ShieldCheck className="w-10 h-10 text-emerald-600" />
             </div>
@@ -159,10 +192,28 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 </>
               )}
             </button>
+
+            <div className="relative py-2">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-100"></div>
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-slate-400">Temporary Access</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => onLoginSuccess({ email: 'Sanju13july@gmail.com', id: 'bypass-user' })}
+              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+            >
+              <ShieldCheck className="w-5 h-5" />
+              <span>Bypass Login (Demo)</span>
+            </button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-            <p className="text-xs text-slate-400">
+          <div className="mt-10 pt-6 border-t border-slate-100 text-center">
+            <p className="text-xs text-slate-400 leading-relaxed">
               Only authorized personnel can access this system.
               <br />
               Contact the administrator for access.
