@@ -3,7 +3,6 @@ import { supabase } from '../lib/supabase';
 import { LogIn, Mail, Lock, AlertCircle, Loader2, ShieldCheck } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../utils';
-import { SpiderWeb } from './SpiderWeb';
 
 import { LoginAdConfig } from '../types';
 
@@ -90,18 +89,12 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className={cn(
-          "w-full rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden flex flex-col md:flex-row relative",
+          "w-full bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden flex flex-col md:flex-row",
           adConfig?.enabled ? "max-w-5xl" : "max-w-md"
         )}
-        style={{
-          backgroundImage: 'url(https://picsum.photos/seed/market/1920/1080)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
       >
         {adConfig?.enabled && (
-          <div className="hidden md:block md:w-1/2 relative overflow-hidden bg-slate-900 z-10">
-            <SpiderWeb />
+          <div className="hidden md:block md:w-1/2 relative overflow-hidden bg-slate-900">
             {getYoutubeEmbedUrl(adConfig.youtubeUrl) ? (
               <iframe
                 src={getYoutubeEmbedUrl(adConfig.youtubeUrl)!}
@@ -129,12 +122,12 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
           </div>
         )}
 
-        <div className={cn("p-8 md:p-12 flex flex-col justify-center relative z-10 bg-white/85 backdrop-blur-md", adConfig?.enabled ? "md:w-1/2" : "w-full")}>
+        <div className={cn("p-8 md:p-12 flex flex-col justify-center", adConfig?.enabled ? "md:w-1/2" : "w-full")}>
           <div className="flex flex-col items-center mb-10">
             <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-4">
               <ShieldCheck className="w-10 h-10 text-emerald-600" />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">Johar Billing</h1>
+            <h1 className="text-2xl font-bold text-slate-900">BharatBill Admin</h1>
             <p className="text-slate-500 text-sm mt-1">Secure access to your dashboard</p>
           </div>
 
@@ -239,7 +232,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
             </button>
             <button
               type="button"
-              onClick={() => onLoginSuccess({ email: 'test@joharbilling.test', id: '4' })}
+              onClick={() => onLoginSuccess({ email: 'test@bharatbill.test', id: '4' })}
               className="w-full bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 mt-2"
             >
               <ShieldCheck className="w-5 h-5" />

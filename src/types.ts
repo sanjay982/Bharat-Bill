@@ -1,6 +1,5 @@
 export interface Product {
   id: string;
-  tenantId: string;
   name: string;
   sku: string;
   hsnCode: string;
@@ -12,7 +11,6 @@ export interface Product {
 
 export interface Contact {
   id: string;
-  tenantId: string;
   name: string;
   email: string;
   phone: string;
@@ -95,7 +93,6 @@ export interface LoginAdConfig {
 
 export interface AppNotification {
   id: string;
-  tenantId: string;
   title: string;
   message: string;
   time: string;
