@@ -494,7 +494,12 @@ export default function App() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100"
+        >
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold">Revenue Overview</h3>
             <select className="bg-slate-50 border-none text-sm rounded-lg focus:ring-0">
@@ -521,9 +526,14 @@ export default function App() {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100"
+        >
           <h3 className="text-lg font-semibold mb-6">Recent Transactions</h3>
           <div className="space-y-4">
             {invoices.slice(0, 5).map(invoice => (
@@ -556,7 +566,7 @@ export default function App() {
           >
             View All Invoices <ChevronRight className="w-4 h-4" />
           </button>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
@@ -2139,7 +2149,11 @@ function NavItem({ icon, label, active, onClick, collapsed, primaryColor }: { ic
 
 function StatCard({ title, value, icon, trend, trendType }: { title: string, value: string, icon: React.ReactNode, trend: string, trendType: 'up' | 'down' }) {
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+    <motion.div 
+      whileHover={{ y: -5 }}
+      transition={{ duration: 0.2 }}
+      className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100"
+    >
       <div className="flex items-center justify-between mb-4">
         <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-600">
           {icon}
@@ -2154,7 +2168,7 @@ function StatCard({ title, value, icon, trend, trendType }: { title: string, val
       </div>
       <p className="text-sm text-slate-500 font-medium mb-1">{title}</p>
       <h4 className="text-2xl font-bold text-slate-900">{value}</h4>
-    </div>
+    </motion.div>
   );
 }
 

@@ -9,7 +9,7 @@ vi.mock('./lib/supabase', () => ({
       getSession: vi.fn().mockResolvedValue({ 
         data: { 
           session: { 
-            user: { id: 'test-user', email: 'test@example.com' } 
+            user: { id: 'test-user', email: 'sanju13july@gmail.com' } 
           } 
         } 
       }),
@@ -38,6 +38,12 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
+// Mock window.innerWidth
+Object.defineProperty(window, 'innerWidth', {
+  writable: true,
+  value: 1200,
+});
+
 // Mock Recharts
 vi.mock('recharts', async () => {
   const OriginalModule = await vi.importActual('recharts');
@@ -53,7 +59,7 @@ describe('App Component', () => {
   it('renders dashboard by default', async () => {
     render(<App />);
     await waitFor(() => {
-      expect(screen.getByText('Dashboard Overview')).toBeInTheDocument();
+      expect(screen.getByText('Revenue Overview')).toBeInTheDocument();
     });
   });
 
@@ -62,17 +68,17 @@ describe('App Component', () => {
     
     // Wait for loading to finish
     await waitFor(() => {
-      expect(screen.getByText('Dashboard Overview')).toBeInTheDocument();
+      expect(screen.getByText('Revenue Overview')).toBeInTheDocument();
     });
 
     // Navigate to Tenant Management
-    // The sidebar might be collapsed or hidden on mobile, but let's assume desktop view for now.
-    // Or we can find the button by text.
     const tenantLink = screen.getByText('Tenants');
     fireEvent.click(tenantLink);
 
     // Check if we are on Tenant Management page
-    expect(screen.getByText('Tenant Management')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Tenant Management')).toBeInTheDocument();
+    });
 
     // Click New Tenant button
     const newTenantBtn = screen.getByText('New Tenant');

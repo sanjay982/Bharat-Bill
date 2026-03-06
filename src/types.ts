@@ -18,6 +18,7 @@ export interface Contact {
   address: string;
   type: 'customer' | 'vendor';
   customerType?: 'b2b' | 'b2c';
+  tenantId?: string;
 }
 
 export interface InvoiceItem {
