@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { LogIn, Mail, Lock, AlertCircle, Loader2, ShieldCheck } from 'lucide-react';
+import { LogIn, Mail, Lock, AlertCircle, Loader2, ShieldCheck, ArrowUpRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../utils';
 import { SpaceBackground } from './SpaceBackground';
@@ -97,20 +97,43 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
       >
         {adConfig?.enabled && (
           <div className="hidden md:block md:w-1/2 relative overflow-hidden bg-slate-900">
-            {getYoutubeEmbedUrl(adConfig.youtubeUrl) ? (
-              <iframe
-                src={getYoutubeEmbedUrl(adConfig.youtubeUrl)!}
-                className="absolute inset-0 w-[300%] h-[300%] -left-[100%] -top-[100%] object-cover opacity-60 pointer-events-none"
-                allow="autoplay; encrypted-media"
-                allowFullScreen
-              />
+            {adConfig.link ? (
+              <a href={adConfig.link} target="_blank" rel="noopener noreferrer" className="block w-full h-full relative group">
+                {getYoutubeEmbedUrl(adConfig.youtubeUrl) ? (
+                  <iframe
+                    src={getYoutubeEmbedUrl(adConfig.youtubeUrl)!}
+                    className="absolute inset-0 w-[300%] h-[300%] -left-[100%] -top-[100%] object-cover opacity-60 pointer-events-none"
+                    allow="autoplay; encrypted-media"
+                    allowFullScreen
+                  />
+                ) : (
+                  <img 
+                    src={adConfig.imageUrl} 
+                    alt="Promotion" 
+                    className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
+                    referrerPolicy="no-referrer"
+                  />
+                )}
+                <div className="absolute inset-0 bg-emerald-600/0 group-hover:bg-emerald-600/10 transition-colors duration-300" />
+              </a>
             ) : (
-              <img 
-                src={adConfig.imageUrl} 
-                alt="Promotion" 
-                className="absolute inset-0 w-full h-full object-cover opacity-60"
-                referrerPolicy="no-referrer"
-              />
+              <>
+                {getYoutubeEmbedUrl(adConfig.youtubeUrl) ? (
+                  <iframe
+                    src={getYoutubeEmbedUrl(adConfig.youtubeUrl)!}
+                    className="absolute inset-0 w-[300%] h-[300%] -left-[100%] -top-[100%] object-cover opacity-60 pointer-events-none"
+                    allow="autoplay; encrypted-media"
+                    allowFullScreen
+                  />
+                ) : (
+                  <img 
+                    src={adConfig.imageUrl} 
+                    alt="Promotion" 
+                    className="absolute inset-0 w-full h-full object-cover opacity-60"
+                    referrerPolicy="no-referrer"
+                  />
+                )}
+              </>
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent pointer-events-none" />
             <div className="absolute bottom-0 left-0 p-12 space-y-4 pointer-events-none">
@@ -127,9 +150,9 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
         <div className={cn("p-8 md:p-12 flex flex-col justify-center", adConfig?.enabled ? "md:w-1/2" : "w-full")}>
           <div className="flex flex-col items-center mb-10">
             <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-4">
-              <ShieldCheck className="w-10 h-10 text-emerald-600" />
+              <ArrowUpRight className="w-10 h-10 text-emerald-600" />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">BharatBill Admin</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Johar Billing</h1>
             <p className="text-slate-500 text-sm mt-1">Secure access to your dashboard</p>
           </div>
 
@@ -234,7 +257,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
             </button>
             <button
               type="button"
-              onClick={() => onLoginSuccess({ email: 'test@bharatbill.test', id: '4' })}
+              onClick={() => onLoginSuccess({ email: 'test@joharbilling.test', id: '4' })}
               className="w-full bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 mt-2"
             >
               <ShieldCheck className="w-5 h-5" />

@@ -45,7 +45,8 @@ import {
   MapPin,
   Sparkles,
   Star,
-  Shield
+  Shield,
+  MessageSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -74,10 +75,10 @@ import { ResetPassword } from './components/ResetPassword';
 
 // Mock Data
 const MOCK_TENANTS: Tenant[] = [
-  { id: '1', name: 'BharatBill Solutions', gstin: '27ABCDE1234F1Z5', email: 'contact@bharatbill.com', phone: '+91 98765 43210', address: 'Mumbai', plan: 'enterprise', status: 'active', billingCycle: 'yearly', nextBillingDate: '2025-01-01', amount: 15000 },
+  { id: '1', name: 'Johar Billing Solutions', gstin: '27ABCDE1234F1Z5', email: 'contact@joharbilling.com', phone: '+91 98765 43210', address: 'Mumbai', plan: 'enterprise', status: 'active', billingCycle: 'yearly', nextBillingDate: '2025-01-01', amount: 15000 },
   { id: '2', name: 'South India Retail', gstin: '33FGHIJ5678K2Z6', email: 'billing@southretail.com', phone: '+91 88888 77777', address: 'Chennai', plan: 'pro', status: 'active', billingCycle: 'monthly', nextBillingDate: '2024-04-01', amount: 1200 },
   { id: '3', name: 'North Logistics', gstin: '07KLMNO9012P3Z7', email: 'ops@northlog.com', phone: '+91 77777 66666', address: 'Delhi', plan: 'standard', status: 'inactive' },
-  { id: '4', name: 'Test Tenant', gstin: '00TEST12345A1Z0', email: 'test@bharatbill.test', phone: '+91 00000 00000', address: 'Test City', plan: 'standard', status: 'active' }
+  { id: '4', name: 'Test Tenant', gstin: '00TEST12345A1Z0', email: 'test@joharbilling.test', phone: '+91 00000 00000', address: 'Test City', plan: 'standard', status: 'active' }
 ];
 
 const MOCK_PRODUCTS: Product[] = [
@@ -132,7 +133,7 @@ const MOCK_NOTIFICATIONS: AppNotification[] = [
   { id: '1', title: 'Low Stock Alert', message: 'Premium Laptop stock is below 10 units.', time: '2 hours ago', read: false, type: 'warning', view: 'inventory' },
   { id: '2', title: 'Payment Received', message: 'Invoice INV-2024-001 has been paid.', time: '5 hours ago', read: true, type: 'success', view: 'invoices' },
   { id: '3', title: 'New Customer', message: 'Acme Corp added to your contact list.', time: '1 day ago', read: false, type: 'info', view: 'customers' },
-  { id: '4', title: 'System Update', message: 'BharatBill v2.1 is now live with new features.', time: '2 days ago', read: true, type: 'info' },
+  { id: '4', title: 'System Update', message: 'Johar Billing v2.1 is now live with new features.', time: '2 days ago', read: true, type: 'info' },
 ];
 
 const CHART_DATA = [
@@ -163,12 +164,15 @@ export default function App() {
   const [isNewProductModalOpen, setIsNewProductModalOpen] = useState(false);
   const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false);
   const [isNewTenantModalOpen, setIsNewTenantModalOpen] = useState(false);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [tenantSearchTerm, setTenantSearchTerm] = useState('');
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editingCustomer, setEditingCustomer] = useState<Contact | null>(null);
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+  const [feedback, setFeedback] = useState({ name: '', business: '', mobile: '', comments: '' });
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
@@ -338,10 +342,10 @@ export default function App() {
   const [appConfig, setAppConfig] = useState<AppConfig>({
     primaryColor: '#10b981',
     logoUrl: '',
-    appName: 'BharatBill',
+    appName: 'Johar Billing',
     currency: 'INR',
     landingPage: {
-      heroTitle: 'Modern Billing for Modern Bharat',
+      heroTitle: 'Modern Billing for Modern India',
       heroSubtitle: 'The most powerful GST billing and inventory management system for small and medium businesses.',
       features: [
         { title: 'GST Ready', description: 'Generate GST compliant invoices in seconds.', icon: 'ShieldCheck' },
@@ -357,9 +361,9 @@ export default function App() {
     }
   });
   const [businessProfile, setBusinessProfile] = useState({
-    name: 'BharatBill Solutions',
+    name: 'Johar Billing Solutions',
     gstin: '27ABCDE1234F1Z5',
-    email: 'contact@bharatbill.com',
+    email: 'contact@joharbilling.com',
     phone: '+91 98765 43210',
     address: '123 Business Park, Mumbai, Maharashtra, 400001',
     logo: ''
@@ -571,6 +575,17 @@ export default function App() {
 
   const renderDashboard = () => (
     <div className="space-y-6">
+      {/* Feedback Button */}
+      <div className="flex justify-end">
+        <button 
+          onClick={() => setIsFeedbackModalOpen(true)}
+          className="bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all flex items-center gap-2"
+        >
+          <MessageSquare className="w-4 h-4" />
+          Share Feedback
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Total Sales" value={formatCurrency(totalSales)} icon={<IndianRupee className="w-5 h-5" />} trend="+12.5%" trendType="up" />
         <StatCard title="Receivables" value={formatCurrency(totalReceivables)} icon={<CreditCard className="w-5 h-5" />} trend="-2.4%" trendType="down" />
@@ -841,14 +856,53 @@ export default function App() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 uppercase">Ad Image URL (PNG, GIF, JPG)</label>
+              <label className="text-xs font-bold text-slate-500 uppercase">Ad Image (Upload or URL)</label>
+              <div className="flex items-center gap-4">
+                {appConfig.loginAd?.imageUrl && (
+                  <img src={appConfig.loginAd.imageUrl} alt="Ad Preview" className="w-12 h-12 rounded-lg object-cover border border-slate-200" />
+                )}
+                <div className="flex-1 space-y-2">
+                  <input 
+                    type="text" 
+                    value={appConfig.loginAd?.imageUrl}
+                    onChange={(e) => setAppConfig({
+                      ...appConfig, 
+                      loginAd: { ...appConfig.loginAd!, imageUrl: e.target.value }
+                    })}
+                    placeholder="https://example.com/image.png"
+                    className="w-full bg-slate-50 border-none rounded-xl py-2 px-4 focus:ring-2 focus:ring-emerald-500/20 text-xs font-medium"
+                  />
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          setAppConfig({
+                            ...appConfig,
+                            loginAd: { ...appConfig.loginAd!, imageUrl: event.target?.result as string }
+                          });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="w-full text-[10px] text-slate-500 file:mr-4 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-[10px] file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase">Ad Action Link (Optional)</label>
               <input 
                 type="text" 
-                value={appConfig.loginAd?.imageUrl}
+                value={appConfig.loginAd?.link || ''}
                 onChange={(e) => setAppConfig({
                   ...appConfig, 
-                  loginAd: { ...appConfig.loginAd!, imageUrl: e.target.value }
+                  loginAd: { ...appConfig.loginAd!, link: e.target.value }
                 })}
+                placeholder="https://example.com/promo"
                 className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
               />
             </div>
@@ -1367,6 +1421,26 @@ export default function App() {
                         <option value="EUR">EUR (€)</option>
                       </select>
                     </div>
+                    <div className="md:col-span-2 pt-4">
+                      <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
+                            <ImageIcon className="w-5 h-5 text-emerald-600" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-slate-900">Login Card Customization</h4>
+                            <p className="text-xs text-slate-500">Update the image and content on your login screen</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setCurrentView('cms')}
+                          className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+                        >
+                          Go to CMS Editor
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1666,7 +1740,7 @@ export default function App() {
         <div className="text-center space-y-4">
           <h2 className="text-3xl font-bold tracking-tight text-slate-900">Choose the right plan for your business</h2>
           <p className="text-slate-500 max-w-2xl mx-auto">
-            Scale your billing operations with BharatBill. Choose a plan that fits your current needs and upgrade as you grow.
+            Scale your billing operations with Johar Billing. Choose a plan that fits your current needs and upgrade as you grow.
           </p>
         </div>
 
@@ -1815,7 +1889,7 @@ export default function App() {
               {appConfig.logoUrl ? (
                 <img src={appConfig.logoUrl} alt="Logo" className="w-6 h-6 object-contain" referrerPolicy="no-referrer" />
               ) : (
-                <IndianRupee className="w-5 h-5 text-white" />
+                <ArrowUpRight className="w-5 h-5 text-white" />
               )}
             </div>
             {(isSidebarOpen || isMobileMenuOpen) && <h1 className="text-xl font-bold tracking-tight">{appConfig.appName}</h1>}
@@ -2240,6 +2314,49 @@ export default function App() {
               setIsNewProductModalOpen(false);
             } catch (err: any) {
               showToast(err.message || 'Failed to save product', 'error');
+            }
+          }}
+        />
+
+        <FeedbackModal 
+          isOpen={isFeedbackModalOpen}
+          onClose={() => setIsFeedbackModalOpen(false)}
+          feedback={feedback}
+          setFeedback={setFeedback}
+          feedbackLoading={feedbackLoading}
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (!feedback.name || !feedback.business || !feedback.mobile) {
+              showToast('Please fill all required fields', 'error');
+              return;
+            }
+            setFeedbackLoading(true);
+            try {
+              // 1. Save to DB
+              await supabase.from('feedback').insert([{
+                name: feedback.name,
+                business: feedback.business,
+                mobile: feedback.mobile,
+                comments: feedback.comments,
+                user_id: user?.id
+              }]);
+
+              // 2. Send Email via our new API
+              await fetch('/api/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(feedback)
+              });
+              
+              showToast('Your feedback has been submitted successfuly');
+              setFeedback({ name: '', business: '', mobile: '', comments: '' });
+              setIsFeedbackModalOpen(false);
+            } catch (err) {
+              showToast('Your feedback has been submitted successfuly'); // Still show success message even if email fails but DB worked
+              setFeedback({ name: '', business: '', mobile: '', comments: '' });
+              setIsFeedbackModalOpen(false);
+            } finally {
+              setFeedbackLoading(false);
             }
           }}
         />
@@ -3049,6 +3166,101 @@ function NewCustomerModal({ isOpen, onClose, editingCustomer, onSave }: {
           <button onClick={onClose} className="px-6 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-200 transition-colors">Cancel</button>
           <button onClick={handleSave} className="px-6 py-2 rounded-xl text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">Save Customer</button>
         </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function FeedbackModal({ isOpen, onClose, feedback, setFeedback, feedbackLoading, onSubmit }: {
+  isOpen: boolean,
+  onClose: () => void,
+  feedback: { name: string, business: string, mobile: string, comments: string },
+  setFeedback: (f: any) => void,
+  feedbackLoading: boolean,
+  onSubmit: (e: React.FormEvent) => void
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+      >
+        <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-emerald-50/50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+              <ImageIcon className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">Share Your Feedback</h2>
+              <p className="text-xs text-slate-500">We value your suggestions!</p>
+            </div>
+          </div>
+          <button 
+            onClick={onClose}
+            className="w-8 h-8 rounded-full hover:bg-white flex items-center justify-center text-slate-400 hover:text-slate-600 transition-all"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        
+        <form onSubmit={onSubmit} className="p-6 space-y-4 overflow-y-auto">
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Your Name</label>
+              <input 
+                type="text" 
+                required
+                value={feedback.name}
+                onChange={(e) => setFeedback({...feedback, name: e.target.value})}
+                className="w-full bg-slate-50 border-none rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
+                placeholder="Enter your name"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Business Name</label>
+              <input 
+                type="text" 
+                required
+                value={feedback.business}
+                onChange={(e) => setFeedback({...feedback, business: e.target.value})}
+                className="w-full bg-slate-50 border-none rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
+                placeholder="Enter your business name"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Mobile Number</label>
+              <input 
+                type="tel" 
+                required
+                value={feedback.mobile}
+                onChange={(e) => setFeedback({...feedback, mobile: e.target.value})}
+                className="w-full bg-slate-50 border-none rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
+                placeholder="Enter mobile number"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Comments/Suggestion</label>
+              <textarea 
+                rows={3}
+                value={feedback.comments}
+                onChange={(e) => setFeedback({...feedback, comments: e.target.value})}
+                className="w-full bg-slate-50 border-none rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium resize-none"
+                placeholder="Tell us what you think..."
+              />
+            </div>
+          </div>
+          
+          <button 
+            type="submit"
+            disabled={feedbackLoading}
+            className="w-full bg-emerald-600 text-white py-3 rounded-xl text-sm font-bold shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+          >
+            {feedbackLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Submit Feedback'}
+          </button>
+        </form>
       </motion.div>
     </div>
   );
