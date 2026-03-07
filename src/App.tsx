@@ -176,11 +176,17 @@ export default function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      if (session?.user && session.user.id !== 'bypass-user') {
+        fetchData(session.user.id);
+      }
       setAuthLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      if (session?.user && session.user.id !== 'bypass-user') {
+        fetchData(session.user.id);
+      }
       if (event === 'PASSWORD_RECOVERY') {
         setIsRecoveryMode(true);
       }
@@ -188,6 +194,85 @@ export default function App() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const fetchData = async (userId: string) => {
+    try {
+      // Fetch Products
+      const { data: productsData } = await supabase
+        .from('products')
+        .select('*')
+        .eq('user_id', userId);
+      if (productsData) {
+        setProducts(productsData.map(p => ({
+          id: p.id,
+          name: p.name,
+          sku: p.sku,
+          hsnCode: p.hsn_code,
+          price: Number(p.price),
+          stock: p.stock,
+          unit: p.unit,
+          gstRate: p.gst_rate
+        })));
+      }
+
+      // Fetch Contacts
+      const { data: contactsData } = await supabase
+        .from('contacts')
+        .select('*')
+        .eq('user_id', userId);
+      if (contactsData) {
+        setContacts(contactsData.map(c => ({
+          id: c.id,
+          name: c.name,
+          email: c.email,
+          phone: c.phone,
+          gstin: c.gstin,
+          address: c.address,
+          type: c.type,
+          customerType: c.customer_type
+        })));
+      }
+
+      // Fetch Invoices
+      const { data: invoicesData } = await supabase
+        .from('invoices')
+        .select(`
+          *,
+          invoice_items (*)
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+      
+      if (invoicesData) {
+        setInvoices(invoicesData.map(inv => ({
+          id: inv.id,
+          invoiceNumber: inv.invoice_number,
+          date: inv.date,
+          dueDate: inv.due_date,
+          contactId: inv.contact_id,
+          tenantId: '1',
+          subtotal: Number(inv.subtotal),
+          totalGst: Number(inv.total_gst),
+          totalAmount: Number(inv.total_amount),
+          status: inv.status,
+          type: inv.type,
+          items: inv.invoice_items.map((item: any) => ({
+            id: item.id,
+            productId: item.product_id,
+            name: item.name,
+            hsnCode: item.hsn_code,
+            quantity: item.quantity,
+            price: Number(item.price),
+            gstRate: item.gst_rate,
+            amount: Number(item.amount),
+            gstAmount: Number(item.gst_amount)
+          }))
+        })));
+      }
+    } catch (err) {
+      console.error('Error fetching data:', err);
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -508,7 +593,7 @@ export default function App() {
             </select>
           </div>
           <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+            <ResponsiveContainer width="100%" height="100%" minHeight={300}>
               <AreaChart data={CHART_DATA}>
                 <defs>
                   <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
@@ -1436,7 +1521,7 @@ export default function App() {
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <h3 className="text-lg font-semibold mb-6">Sales by Category</h3>
           <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+            <ResponsiveContainer width="100%" height="100%" minHeight={300}>
               <PieChart>
                 <Pie
                   data={[
@@ -1483,7 +1568,7 @@ export default function App() {
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <h3 className="text-lg font-semibold mb-6">Monthly GST Report</h3>
           <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+            <ResponsiveContainer width="100%" height="100%" minHeight={300}>
               <BarChart data={CHART_DATA}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
@@ -2028,16 +2113,61 @@ export default function App() {
           products={products}
           contacts={contacts}
           activeTenantId={activeTenantId}
-          onSave={(invoice) => {
-            setInvoices([invoice, ...invoices]);
-            setIsNewInvoiceModalOpen(false);
-            showToast('Invoice generated successfully!');
-            addNotification(
-              'Invoice Generated',
-              `Invoice ${invoice.invoiceNumber} for ${formatCurrency(invoice.totalAmount)} has been created.`,
-              'success',
-              'invoices'
-            );
+          onSave={async (invoice) => {
+            try {
+              if (user && user.id !== 'bypass-user') {
+                const { data: invData, error: invError } = await supabase
+                  .from('invoices')
+                  .insert([{
+                    invoice_number: invoice.invoiceNumber,
+                    date: invoice.date,
+                    due_date: invoice.dueDate,
+                    contact_id: invoice.contactId,
+                    subtotal: invoice.subtotal,
+                    total_gst: invoice.totalGst,
+                    total_amount: invoice.totalAmount,
+                    status: invoice.status,
+                    type: invoice.type,
+                    user_id: user.id
+                  }])
+                  .select();
+
+                if (invError) throw invError;
+
+                const invoiceId = invData[0].id;
+                const itemsToInsert = invoice.items.map(item => ({
+                  invoice_id: invoiceId,
+                  product_id: item.productId,
+                  name: item.name,
+                  hsn_code: item.hsnCode,
+                  quantity: item.quantity,
+                  price: item.price,
+                  gst_rate: item.gstRate,
+                  amount: item.amount,
+                  gst_amount: item.gstAmount
+                }));
+
+                const { error: itemsError } = await supabase
+                  .from('invoice_items')
+                  .insert(itemsToInsert);
+
+                if (itemsError) throw itemsError;
+                
+                invoice.id = invoiceId;
+              }
+              
+              setInvoices([invoice, ...invoices]);
+              setIsNewInvoiceModalOpen(false);
+              showToast('Invoice generated successfully!');
+              addNotification(
+                'Invoice Generated',
+                `Invoice ${invoice.invoiceNumber} for ${formatCurrency(invoice.totalAmount)} has been created.`,
+                'success',
+                'invoices'
+              );
+            } catch (err: any) {
+              showToast(err.message || 'Failed to save invoice', 'error');
+            }
           }}
         />
 
@@ -2064,30 +2194,106 @@ export default function App() {
           isOpen={isNewProductModalOpen}
           onClose={() => setIsNewProductModalOpen(false)}
           editingProduct={editingProduct}
-          onSave={(product) => {
-            if (editingProduct) {
-              setProducts(products.map(p => p.id === product.id ? product : p));
-              showToast('Product updated successfully');
-            } else {
-              setProducts([product, ...products]);
-              showToast('New product created successfully');
+          onSave={async (product) => {
+            try {
+              if (user && user.id !== 'bypass-user') {
+                if (editingProduct) {
+                  const { error } = await supabase
+                    .from('products')
+                    .update({
+                      name: product.name,
+                      sku: product.sku,
+                      hsn_code: product.hsnCode,
+                      price: product.price,
+                      stock: product.stock,
+                      unit: product.unit,
+                      gst_rate: product.gstRate
+                    })
+                    .eq('id', product.id);
+                  if (error) throw error;
+                } else {
+                  const { data, error } = await supabase
+                    .from('products')
+                    .insert([{
+                      name: product.name,
+                      sku: product.sku,
+                      hsn_code: product.hsnCode,
+                      price: product.price,
+                      stock: product.stock,
+                      unit: product.unit,
+                      gst_rate: product.gstRate,
+                      user_id: user.id
+                    }])
+                    .select();
+                  if (error) throw error;
+                  product.id = data[0].id;
+                }
+              }
+
+              if (editingProduct) {
+                setProducts(products.map(p => p.id === product.id ? product : p));
+                showToast('Product updated successfully');
+              } else {
+                setProducts([product, ...products]);
+                showToast('New product created successfully');
+              }
+              setIsNewProductModalOpen(false);
+            } catch (err: any) {
+              showToast(err.message || 'Failed to save product', 'error');
             }
-            setIsNewProductModalOpen(false);
           }}
         />
         <NewCustomerModal
           isOpen={isNewCustomerModalOpen}
           onClose={() => setIsNewCustomerModalOpen(false)}
           editingCustomer={editingCustomer}
-          onSave={(customer) => {
-            if (editingCustomer) {
-              setContacts(contacts.map(c => c.id === customer.id ? customer : c));
-              showToast('Customer updated successfully');
-            } else {
-              setContacts([customer, ...contacts]);
-              showToast('New customer created successfully');
+          onSave={async (customer) => {
+            try {
+              if (user && user.id !== 'bypass-user') {
+                if (editingCustomer) {
+                  const { error } = await supabase
+                    .from('contacts')
+                    .update({
+                      name: customer.name,
+                      email: customer.email,
+                      phone: customer.phone,
+                      gstin: customer.gstin,
+                      address: customer.address,
+                      type: customer.type,
+                      customer_type: customer.customerType
+                    })
+                    .eq('id', customer.id);
+                  if (error) throw error;
+                } else {
+                  const { data, error } = await supabase
+                    .from('contacts')
+                    .insert([{
+                      name: customer.name,
+                      email: customer.email,
+                      phone: customer.phone,
+                      gstin: customer.gstin,
+                      address: customer.address,
+                      type: customer.type,
+                      customer_type: customer.customerType,
+                      user_id: user.id
+                    }])
+                    .select();
+                  if (error) throw error;
+                  customer.id = data[0].id;
+                }
+              }
+
+              if (editingCustomer) {
+                setContacts(contacts.map(c => c.id === customer.id ? customer : c));
+                showToast('Customer updated successfully');
+              } else {
+                setContacts([customer, ...contacts]);
+                showToast('New customer created successfully');
+              }
+              setIsNewCustomerModalOpen(false);
+            } catch (err: any) {
+              showToast(err.message || 'Failed to save customer', 'error');
             }
-            setIsNewCustomerModalOpen(false);
           }}
         />
 
