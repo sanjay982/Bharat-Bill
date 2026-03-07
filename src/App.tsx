@@ -72,6 +72,7 @@ import { cn, formatCurrency, calculateGST } from './utils';
 import { supabase } from './lib/supabase';
 import { Login } from './components/Login';
 import { ResetPassword } from './components/ResetPassword';
+import { LandingPage } from './components/LandingPage';
 
 // Mock Data
 const MOCK_TENANTS: Tenant[] = [
@@ -148,6 +149,7 @@ const CHART_DATA = [
 export default function App() {
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [showLanding, setShowLanding] = useState(true);
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [billingDuration, setBillingDuration] = useState<'monthly' | 'quarterly' | 'half-yearly' | 'yearly'>('monthly');
@@ -281,6 +283,7 @@ export default function App() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    setShowLanding(true);
   };
 
   const isAdmin = user?.email?.toLowerCase() === 'sanju13july@gmail.com';
@@ -1855,6 +1858,10 @@ export default function App() {
         onBack={() => setIsRecoveryMode(false)} 
       />
     );
+  }
+
+  if (!user && showLanding) {
+    return <LandingPage onGetStarted={() => setShowLanding(false)} />;
   }
 
   if (!user) {
