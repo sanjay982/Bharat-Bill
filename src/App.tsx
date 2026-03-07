@@ -46,7 +46,8 @@ import {
   Sparkles,
   Star,
   Shield,
-  MessageSquare
+  MessageSquare,
+  CheckCircle2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -178,6 +179,9 @@ export default function App() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [userPlan, setUserPlan] = useState<'trial' | 'standard' | 'pro' | 'enterprise'>('trial');
+  const [reportDownloadsCount, setReportDownloadsCount] = useState(0);
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -432,7 +436,32 @@ export default function App() {
     }
   };
 
+  const checkLimit = (type: 'invoice' | 'customer' | 'product' | 'report') => {
+    if (userPlan !== 'trial') return true;
+
+    const limits = {
+      invoice: 2,
+      customer: 1,
+      product: 1,
+      report: 1
+    };
+
+    let currentUsage = 0;
+    if (type === 'invoice') currentUsage = invoices.length;
+    if (type === 'customer') currentUsage = contacts.filter(c => c.type === 'customer').length;
+    if (type === 'product') currentUsage = products.length;
+    if (type === 'report') currentUsage = reportDownloadsCount;
+
+    if (currentUsage >= limits[type]) {
+      setIsPricingModalOpen(true);
+      return false;
+    }
+    return true;
+  };
+
   const downloadReport = (reportName: string) => {
+    if (!checkLimit('report')) return;
+    
     showToast(`Generating ${reportName}...`);
     
     // Simulate report generation
@@ -448,6 +477,7 @@ export default function App() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
+      setReportDownloadsCount(prev => prev + 1);
       showToast(`${reportName} downloaded successfully!`);
       addNotification(
         'Report Downloaded',
@@ -510,8 +540,10 @@ export default function App() {
           </div>
           <button 
             onClick={() => {
-              setEditingCustomer(null);
-              setIsNewCustomerModalOpen(true);
+              if (checkLimit('customer')) {
+                setEditingCustomer(null);
+                setIsNewCustomerModalOpen(true);
+              }
             }}
             className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors"
           >
@@ -689,16 +721,18 @@ export default function App() {
           </div>
           <button 
             onClick={() => {
-              const currentTenant = tenants.find(t => t.id === activeTenantId);
-              const currentMonth = new Date().getMonth();
-              const currentYear = new Date().getFullYear();
-              const monthlyInvoices = invoices.filter(inv => 
-                inv.tenantId === activeTenantId && 
-                new Date(inv.date).getMonth() === currentMonth &&
-                new Date(inv.date).getFullYear() === currentYear
-              );
-              
-              setIsNewInvoiceModalOpen(true);
+              if (checkLimit('invoice')) {
+                const currentTenant = tenants.find(t => t.id === activeTenantId);
+                const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
+                const monthlyInvoices = invoices.filter(inv => 
+                  inv.tenantId === activeTenantId && 
+                  new Date(inv.date).getMonth() === currentMonth &&
+                  new Date(inv.date).getFullYear() === currentYear
+                );
+                
+                setIsNewInvoiceModalOpen(true);
+              }
             }}
             className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors"
           >
@@ -1186,8 +1220,10 @@ export default function App() {
           </div>
           <button 
             onClick={() => {
-              setEditingProduct(null);
-              setIsNewProductModalOpen(true);
+              if (checkLimit('product')) {
+                setEditingProduct(null);
+                setIsNewProductModalOpen(true);
+              }
             }}
             className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors"
           >
@@ -2456,6 +2492,17 @@ export default function App() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Pricing Modal */}
+        <PricingModal 
+          isOpen={isPricingModalOpen} 
+          onClose={() => setIsPricingModalOpen(false)} 
+          onSelectPlan={(plan) => {
+            setUserPlan(plan);
+            setIsPricingModalOpen(false);
+            showToast(`Successfully upgraded to ${plan} plan!`);
+          }}
+        />
       </div>
     );
   }
@@ -3376,6 +3423,124 @@ function NewProductModal({ isOpen, onClose, editingProduct, onSave }: {
         <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
           <button onClick={onClose} className="px-6 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-200 transition-colors">Cancel</button>
           <button onClick={handleSave} className="px-6 py-2 rounded-xl text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">Save Product</button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function PricingModal({ isOpen, onClose, onSelectPlan }: { 
+  isOpen: boolean, 
+  onClose: () => void, 
+  onSelectPlan: (plan: 'standard' | 'pro' | 'enterprise') => void 
+}) {
+  if (!isOpen) return null;
+
+  const plans = [
+    {
+      id: 'standard',
+      name: 'Standard',
+      price: '₹499',
+      duration: '/month',
+      features: ['Unlimited Invoices', 'Unlimited Customers', 'Unlimited Inventory', 'Basic Reports'],
+      color: 'bg-blue-600',
+      lightColor: 'bg-blue-50',
+      textColor: 'text-blue-600'
+    },
+    {
+      id: 'pro',
+      name: 'Pro',
+      price: '₹999',
+      duration: '/month',
+      features: ['Everything in Standard', 'Advanced Analytics', 'Multi-User Access', 'Priority Support'],
+      color: 'bg-emerald-600',
+      lightColor: 'bg-emerald-50',
+      textColor: 'text-emerald-600',
+      popular: true
+    },
+    {
+      id: 'enterprise',
+      name: 'Enterprise',
+      price: '₹2499',
+      duration: '/month',
+      features: ['Everything in Pro', 'Custom Branding', 'API Access', 'Dedicated Account Manager'],
+      color: 'bg-indigo-600',
+      lightColor: 'bg-indigo-50',
+      textColor: 'text-indigo-600'
+    }
+  ];
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="bg-white w-full max-w-5xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+      >
+        <div className="p-8 text-center bg-slate-50 border-b border-slate-100 relative">
+          <button 
+            onClick={onClose}
+            className="absolute right-6 top-6 p-2 hover:bg-white rounded-full transition-all text-slate-400 hover:text-slate-600"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-bold uppercase tracking-wider mb-4">
+            <Sparkles className="w-3 h-3" /> Trial Limit Reached
+          </div>
+          <h2 className="text-3xl font-bold text-slate-900 mb-2">Upgrade to Continue Growing</h2>
+          <p className="text-slate-500 max-w-xl mx-auto">Choose a plan that fits your business needs. Unlock unlimited potential with Johar Billing.</p>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-8 lg:p-12">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {plans.map((plan) => (
+              <div 
+                key={plan.id}
+                className={cn(
+                  "relative p-8 rounded-[2rem] border-2 transition-all flex flex-col",
+                  plan.popular ? "border-emerald-500 shadow-xl shadow-emerald-500/10 scale-105 z-10 bg-white" : "border-slate-100 hover:border-slate-200 bg-slate-50/50"
+                )}
+              >
+                {plan.popular && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-emerald-500 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">
+                    Most Popular
+                  </div>
+                )}
+                <div className="mb-8">
+                  <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-bold">{plan.price}</span>
+                    <span className="text-slate-500 text-sm">{plan.duration}</span>
+                  </div>
+                </div>
+                <div className="space-y-4 mb-10 flex-1">
+                  {plan.features.map((feature, i) => (
+                    <div key={i} className="flex items-start gap-3">
+                      <div className={cn("mt-1 p-0.5 rounded-full", plan.lightColor)}>
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="text-sm text-slate-600">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+                <button 
+                  onClick={() => onSelectPlan(plan.id as any)}
+                  className={cn(
+                    "w-full py-4 rounded-2xl text-sm font-bold transition-all active:scale-95 shadow-lg",
+                    plan.popular ? "bg-emerald-600 text-white shadow-emerald-600/20 hover:bg-emerald-700" : "bg-white text-slate-900 border border-slate-200 hover:bg-slate-50"
+                  )}
+                >
+                  Choose {plan.name}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="p-6 bg-slate-50 border-t border-slate-100 text-center">
+          <p className="text-xs text-slate-400">
+            Secure payment processing. Cancel or switch plans anytime. Need a custom plan? <button className="text-emerald-600 font-bold hover:underline">Contact Sales</button>
+          </p>
         </div>
       </motion.div>
     </div>
