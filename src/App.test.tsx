@@ -118,4 +118,22 @@ describe('App Component', () => {
       expect(screen.getByText('Test Corp')).toBeInTheDocument();
     });
   });
+
+  it('renders quotations view', async () => {
+    render(<App />);
+    
+    // Wait for loading to finish
+    await waitFor(() => {
+      expect(screen.getByText('Revenue Overview')).toBeInTheDocument();
+    });
+
+    // Navigate to Quotations
+    const quotationsLink = screen.getByText('Quotations');
+    fireEvent.click(quotationsLink);
+
+    // Check if we are on Quotations page
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Quotations' })).toBeInTheDocument();
+    });
+  });
 });

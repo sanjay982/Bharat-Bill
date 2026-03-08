@@ -50,6 +50,21 @@ export interface Invoice {
   invoiceType?: 'b2b' | 'b2c';
 }
 
+export interface Quotation {
+  id: string;
+  quotationNumber: string;
+  date: string;
+  validUntil: string;
+  contactId: string;
+  tenantId: string;
+  items: InvoiceItem[];
+  subtotal: number;
+  totalGst: number;
+  totalAmount: number;
+  status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'converted';
+  notes?: string;
+}
+
 export interface Tenant {
   id: string;
   name: string;
@@ -102,4 +117,4 @@ export interface AppNotification {
   view?: View;
 }
 
-export type View = 'dashboard' | 'invoices' | 'inventory' | 'customers' | 'vendors' | 'settings' | 'tenants' | 'billing' | 'plans' | 'notifications' | 'reports' | 'cms';
+export type View = 'dashboard' | 'invoices' | 'quotations' | 'inventory' | 'customers' | 'vendors' | 'settings' | 'tenants' | 'billing' | 'plans' | 'notifications' | 'reports' | 'cms';

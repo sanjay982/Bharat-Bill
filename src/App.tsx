@@ -68,9 +68,10 @@ import { format } from 'date-fns';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import 'jspdf-autotable';
-import { Product, Contact, Invoice, View, InvoiceItem, Tenant, AppConfig, AppNotification } from './types';
+import { Product, Contact, Invoice, Quotation, View, InvoiceItem, Tenant, AppConfig, AppNotification } from './types';
 import { cn, formatCurrency, calculateGST } from './utils';
 import { supabase } from './lib/supabase';
+import { NewQuotationModal } from './components/NewQuotationModal';
 import { Login } from './components/Login';
 import { ResetPassword } from './components/ResetPassword';
 import { LandingPage } from './components/LandingPage';
@@ -131,6 +132,24 @@ const MOCK_INVOICES: Invoice[] = [
   }
 ];
 
+const MOCK_QUOTATIONS: Quotation[] = [
+  { 
+    id: '1', 
+    quotationNumber: 'QTN-2024-001', 
+    date: '2024-03-05', 
+    validUntil: '2024-03-20', 
+    contactId: '1', 
+    tenantId: '1',
+    items: [
+      { id: '1', productId: '1', name: 'Premium Laptop', hsnCode: '8471', quantity: 2, price: 45000, gstRate: 18, amount: 90000, gstAmount: 16200 }
+    ],
+    subtotal: 90000,
+    totalGst: 16200,
+    totalAmount: 106200,
+    status: 'sent'
+  }
+];
+
 const MOCK_NOTIFICATIONS: AppNotification[] = [
   { id: '1', title: 'Low Stock Alert', message: 'Premium Laptop stock is below 10 units.', time: '2 hours ago', read: false, type: 'warning', view: 'inventory' },
   { id: '2', title: 'Payment Received', message: 'Invoice INV-2024-001 has been paid.', time: '5 hours ago', read: true, type: 'success', view: 'invoices' },
@@ -159,11 +178,13 @@ export default function App() {
   const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
   const [contacts, setContacts] = useState<Contact[]>(MOCK_CONTACTS);
   const [invoices, setInvoices] = useState<Invoice[]>(MOCK_INVOICES);
+  const [quotations, setQuotations] = useState<Quotation[]>(MOCK_QUOTATIONS);
   const [tenants, setTenants] = useState<Tenant[]>(MOCK_TENANTS);
   const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [activeTenantId, setActiveTenantId] = useState('1');
   const [isNewInvoiceModalOpen, setIsNewInvoiceModalOpen] = useState(false);
+  const [isNewQuotationModalOpen, setIsNewQuotationModalOpen] = useState(false);
   const [isNewProductModalOpen, setIsNewProductModalOpen] = useState(false);
   const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false);
   const [isNewTenantModalOpen, setIsNewTenantModalOpen] = useState(false);
@@ -436,6 +457,66 @@ export default function App() {
     }
   };
 
+  const generateQuotationPDF = (quotation: Quotation, action: 'download' | 'print' = 'download') => {
+    const doc = new jsPDF();
+    const contact = contacts.find(c => c.id === quotation.contactId);
+    
+    // Header
+    doc.setFontSize(20);
+    doc.text('QUOTATION', 105, 20, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.text(businessProfile.name, 20, 40);
+    doc.text(`GSTIN: ${businessProfile.gstin}`, 20, 45);
+    doc.text(businessProfile.address, 20, 50);
+    
+    doc.text(`Quotation #: ${quotation.quotationNumber}`, 140, 40);
+    doc.text(`Date: ${format(new Date(quotation.date), 'dd/MM/yyyy')}`, 140, 45);
+    doc.text(`Valid Until: ${format(new Date(quotation.validUntil), 'dd/MM/yyyy')}`, 140, 50);
+    
+    // Bill To
+    doc.setFontSize(12);
+    doc.text('Quotation For:', 20, 70);
+    doc.setFontSize(10);
+    doc.text(contact?.name || 'Customer Name', 20, 75);
+    doc.text(contact?.address || 'Address', 20, 80);
+    doc.text(`GSTIN: ${contact?.gstin || 'N/A'}`, 20, 85);
+    
+    // Table
+    const tableData = quotation.items.map(item => [
+      item.name,
+      item.hsnCode,
+      item.quantity,
+      formatCurrency(item.price),
+      `${item.gstRate}%`,
+      formatCurrency(item.gstAmount),
+      formatCurrency(item.amount + item.gstAmount)
+    ]);
+    
+    autoTable(doc, {
+      startY: 100,
+      head: [['Product', 'HSN', 'Qty', 'Price', 'GST %', 'GST Amt', 'Total']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [16, 185, 129] }
+    });
+    
+    const finalY = (doc as any).lastAutoTable.finalY || 150;
+    
+    // Totals
+    doc.text(`Subtotal: ${formatCurrency(quotation.subtotal)}`, 140, finalY + 10);
+    doc.text(`Total GST: ${formatCurrency(quotation.totalGst)}`, 140, finalY + 15);
+    doc.setFontSize(12);
+    doc.text(`Grand Total: ${formatCurrency(quotation.totalAmount)}`, 140, finalY + 25);
+    
+    if (action === 'print') {
+      doc.autoPrint();
+      window.open(doc.output('bloburl'), '_blank');
+    } else {
+      doc.save(`${quotation.quotationNumber}.pdf`);
+    }
+  };
+
   const checkLimit = (type: 'invoice' | 'customer' | 'product' | 'report') => {
     if (isAdmin) return true;
     if (userPlan !== 'trial') return true;
@@ -487,6 +568,38 @@ export default function App() {
         'reports'
       );
     }, 1500);
+  };
+
+  const convertQuotationToInvoice = (quotation: Quotation) => {
+    if (!checkLimit('invoice')) return;
+
+    const newInvoice: Invoice = {
+      id: Math.random().toString(36).substr(2, 9),
+      invoiceNumber: `INV-${new Date().getFullYear()}-${(invoices.length + 1).toString().padStart(3, '0')}`,
+      date: new Date().toISOString(),
+      dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+      contactId: quotation.contactId,
+      tenantId: quotation.tenantId,
+      items: quotation.items,
+      subtotal: quotation.subtotal,
+      totalGst: quotation.totalGst,
+      totalAmount: quotation.totalAmount,
+      status: 'unpaid',
+      type: 'sale',
+      invoiceType: 'b2b'
+    };
+
+    setInvoices([newInvoice, ...invoices]);
+    setQuotations(quotations.map(q => q.id === quotation.id ? { ...q, status: 'converted' } : q));
+    showToast('Quotation converted to invoice successfully');
+    setCurrentView('invoices');
+  };
+
+  const deleteQuotation = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this quotation?')) {
+      setQuotations(quotations.filter(q => q.id !== id));
+      showToast('Quotation deleted successfully');
+    }
   };
 
   const deleteInvoice = (id: string) => {
@@ -703,6 +816,102 @@ export default function App() {
             View All Invoices <ChevronRight className="w-4 h-4" />
           </button>
         </motion.div>
+      </div>
+    </div>
+  );
+
+  const renderQuotations = () => (
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="p-4 md:p-6 border-bottom border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <h2 className="text-xl font-bold">Quotations</h2>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Search quotations..." 
+              className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 w-full md:w-64"
+            />
+          </div>
+          <button 
+            onClick={() => setIsNewQuotationModalOpen(true)}
+            className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors"
+          >
+            <Plus className="w-4 h-4" /> New Quotation
+          </button>
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-slate-50/50 border-y border-slate-100">
+              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Quotation #</th>
+              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Customer</th>
+              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
+              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Valid Until</th>
+              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Amount</th>
+              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {quotations.map(quotation => (
+              <tr key={quotation.id} className="hover:bg-slate-50/50 transition-colors">
+                <td className="px-6 py-4 text-sm font-medium text-slate-900">{quotation.quotationNumber}</td>
+                <td className="px-6 py-4 text-sm text-slate-600">
+                  {contacts.find(c => c.id === quotation.contactId)?.name || 'Unknown'}
+                </td>
+                <td className="px-6 py-4 text-sm text-slate-500">{format(new Date(quotation.date), 'dd MMM yyyy')}</td>
+                <td className="px-6 py-4 text-sm text-slate-500">{format(new Date(quotation.validUntil), 'dd MMM yyyy')}</td>
+                <td className="px-6 py-4 text-sm font-semibold text-slate-900">{formatCurrency(quotation.totalAmount)}</td>
+                <td className="px-6 py-4">
+                  <span className={cn(
+                    "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                    quotation.status === 'converted' ? "bg-emerald-50 text-emerald-700" : 
+                    quotation.status === 'sent' ? "bg-blue-50 text-blue-700" :
+                    "bg-slate-100 text-slate-600"
+                  )}>
+                    {quotation.status}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-2">
+                    {quotation.status !== 'converted' && (
+                      <button 
+                        onClick={() => convertQuotationToInvoice(quotation)}
+                        className="p-2 text-slate-400 hover:text-emerald-600 transition-colors"
+                        title="Convert to Invoice"
+                      >
+                        <FileText className="w-4 h-4" />
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => generateQuotationPDF(quotation, 'print')}
+                      className="p-2 text-slate-400 hover:text-primary transition-colors"
+                      title="Print"
+                    >
+                      <Printer className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => generateQuotationPDF(quotation, 'download')}
+                      className="p-2 text-slate-400 hover:text-primary transition-colors"
+                      title="Download"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => deleteQuotation(quotation.id)}
+                      className="p-2 text-slate-400 hover:text-danger transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -1949,6 +2158,7 @@ export default function App() {
         <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
           <NavItem icon={<LayoutDashboard />} label="Dashboard" active={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
           <NavItem icon={<FileText />} label="Invoices" active={currentView === 'invoices'} onClick={() => { setCurrentView('invoices'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
+          <NavItem icon={<FileText />} label="Quotations" active={currentView === 'quotations'} onClick={() => { setCurrentView('quotations'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
           <NavItem icon={<Package />} label="Inventory" active={currentView === 'inventory'} onClick={() => { setCurrentView('inventory'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
           <NavItem icon={<Users />} label="Customers" active={currentView === 'customers'} onClick={() => { setCurrentView('customers'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
           {isAdmin && (
@@ -2156,6 +2366,7 @@ export default function App() {
             >
               {currentView === 'dashboard' && renderDashboard()}
               {currentView === 'invoices' && renderInvoices()}
+              {currentView === 'quotations' && renderQuotations()}
               {currentView === 'purchases' && <div className="p-8 text-center text-slate-500">Purchases module is under development.</div>}
               {currentView === 'inventory' && renderInventory()}
               {currentView === 'customers' && renderCustomers()}
@@ -2223,6 +2434,28 @@ export default function App() {
           </AnimatePresence>
         </div>
       </main>
+
+        {/* New Quotation Modal */}
+        <NewQuotationModal 
+          isOpen={isNewQuotationModalOpen} 
+          onClose={() => setIsNewQuotationModalOpen(false)} 
+          products={products}
+          contacts={contacts}
+          activeTenantId={activeTenantId}
+          onSave={async (quotation) => {
+            try {
+              console.log('Saving quotation...', quotation);
+              // For now, we'll just update local state as we might not have a quotations table yet
+              // In a real app, this would save to Supabase similar to invoices
+              
+              setQuotations([quotation, ...quotations]);
+              setIsNewQuotationModalOpen(false);
+            } catch (error) {
+              console.error('Error saving quotation:', error);
+              alert('Failed to save quotation. Please try again.');
+            }
+          }} 
+        />
 
         {/* New Invoice Modal */}
         <NewInvoiceModal 
@@ -2937,6 +3170,8 @@ function NewInvoiceModal({ isOpen, onClose, products, contacts, activeTenantId, 
     </div>
   );
 }
+
+
 
 function NewTenantModal({ isOpen, onClose, editingTenant, onSave }: { 
   isOpen: boolean, 

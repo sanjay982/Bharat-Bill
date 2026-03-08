@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
+import { PolicyModal } from './PolicyModal';
 import { 
   ArrowUpRight, 
   ShieldCheck, 
@@ -11,7 +12,17 @@ import {
   CheckCircle2,
   ChevronRight,
   Play,
-  Users
+  Users,
+  MessageSquare,
+  Star,
+  ChevronDown,
+  ChevronUp,
+  Mail,
+  Phone,
+  MapPin,
+  Send,
+  Briefcase,
+  HelpCircle
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -19,6 +30,8 @@ interface LandingPageProps {
 }
 
 export function LandingPage({ onGetStarted }: LandingPageProps) {
+  const [activePolicy, setActivePolicy] = useState<'privacy' | 'terms' | 'refund' | null>(null);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
   const benefits = [
     {
       title: "GST Ready Invoicing",
@@ -271,6 +284,269 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
         </div>
       </section>
 
+      {/* Case Studies Section */}
+      <section className="py-24 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="text-sm font-bold text-emerald-600 uppercase tracking-[0.2em] mb-4">Success Stories</h2>
+            <h3 className="text-4xl font-bold mb-6 tracking-tight">See how businesses are growing with Johar Billing</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                title: "Ranchi Electronics",
+                metric: "30% Increase in Sales",
+                desc: "Streamlined their inventory and billing, leading to faster checkout times and happier customers.",
+                image: "https://images.unsplash.com/photo-1588508065123-287b28e013da?auto=format&fit=crop&q=80&w=800"
+              },
+              {
+                title: "Jamshedpur Mart",
+                metric: "50% Less Inventory Loss",
+                desc: "Real-time stock tracking helped them identify and reduce wastage significantly.",
+                image: "https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&q=80&w=800"
+              },
+              {
+                title: "Dhanbad Pharmacy",
+                metric: "Zero GST Errors",
+                desc: "Automated tax calculations ensured 100% compliance and stress-free filing.",
+                image: "https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&q=80&w=800"
+              }
+            ].map((study, i) => (
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all group"
+              >
+                <div className="h-48 overflow-hidden">
+                  <img 
+                    src={study.image} 
+                    alt={study.title} 
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+                <div className="p-6">
+                  <h4 className="text-xl font-bold mb-2">{study.title}</h4>
+                  <p className="text-emerald-600 font-bold text-sm mb-4">{study.metric}</p>
+                  <p className="text-slate-600 text-sm leading-relaxed">{study.desc}</p>
+                  <button className="mt-4 text-emerald-600 text-sm font-bold flex items-center gap-1 hover:gap-2 transition-all">
+                    Read Case Study <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="text-sm font-bold text-emerald-600 uppercase tracking-[0.2em] mb-4">Testimonials</h2>
+            <h3 className="text-4xl font-bold mb-6 tracking-tight">Trusted by shop owners like you</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                quote: "Johar Billing has completely transformed how I manage my shop. It's so easy to use, even my staff learned it in a day.",
+                author: "Rajesh Kumar",
+                role: "Owner, Kumar General Store",
+                image: "https://randomuser.me/api/portraits/men/32.jpg"
+              },
+              {
+                quote: "The best part is the mobile app. I can check my sales from home. Highly recommended for every shopkeeper in Jharkhand.",
+                author: "Amit Singh",
+                role: "Director, Singh Hardware",
+                image: "https://randomuser.me/api/portraits/men/45.jpg"
+              },
+              {
+                quote: "Customer support is excellent. Whenever I have a doubt, they help me immediately. The GST reports are a lifesaver.",
+                author: "Priya Sharma",
+                role: "Manager, Sharma Boutique",
+                image: "https://randomuser.me/api/portraits/women/44.jpg"
+              }
+            ].map((testimonial, i) => (
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="bg-white p-8 rounded-3xl shadow-lg border border-slate-100 relative"
+              >
+                <div className="absolute top-8 right-8 text-emerald-100">
+                  <MessageSquare className="w-12 h-12" />
+                </div>
+                <div className="flex gap-1 mb-6">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star key={star} className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-slate-600 mb-8 relative z-10">"{testimonial.quote}"</p>
+                <div className="flex items-center gap-4">
+                  <img 
+                    src={testimonial.image} 
+                    alt={testimonial.author} 
+                    className="w-12 h-12 rounded-full border-2 border-emerald-100"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div>
+                    <p className="font-bold text-slate-900">{testimonial.author}</p>
+                    <p className="text-xs text-slate-500">{testimonial.role}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Portfolio / Industries Section */}
+      <section className="py-24 bg-slate-900 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="text-sm font-bold text-emerald-400 uppercase tracking-[0.2em] mb-4">Industries</h2>
+            <h3 className="text-4xl font-bold mb-6 tracking-tight">Perfect for any business type</h3>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {[
+              { icon: <Package className="w-8 h-8" />, name: "Retail Stores" },
+              { icon: <Smartphone className="w-8 h-8" />, name: "Electronics" },
+              { icon: <ShieldCheck className="w-8 h-8" />, name: "Pharmacy" },
+              { icon: <Briefcase className="w-8 h-8" />, name: "Services" },
+              { icon: <Building2 className="w-8 h-8" />, name: "Wholesale" },
+              { icon: <Users className="w-8 h-8" />, name: "Restaurants" },
+              { icon: <TrendingUp className="w-8 h-8" />, name: "Supermarkets" },
+              { icon: <Zap className="w-8 h-8" />, name: "Hardware" }
+            ].map((industry, i) => (
+              <motion.div 
+                key={i}
+                whileHover={{ scale: 1.05 }}
+                className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700 flex flex-col items-center justify-center gap-4 text-center hover:bg-slate-800 transition-colors"
+              >
+                <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-400">
+                  {industry.icon}
+                </div>
+                <p className="font-bold text-lg">{industry.name}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-24 bg-slate-50">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-sm font-bold text-emerald-600 uppercase tracking-[0.2em] mb-4">FAQ</h2>
+            <h3 className="text-4xl font-bold mb-6 tracking-tight">Frequently Asked Questions</h3>
+          </div>
+          <div className="space-y-4">
+            {[
+              { q: "Is Johar Billing GST compliant?", a: "Yes, our software is fully GST compliant. It automatically calculates CGST, SGST, and IGST based on your products and generates GST-ready invoices and reports." },
+              { q: "Can I use it offline?", a: "Yes! Johar Billing works in a hybrid mode. You can continue billing even without internet, and your data will sync automatically when you're back online." },
+              { q: "Is there a mobile app available?", a: "Absolutely. We have a dedicated mobile app for both Android and iOS, allowing you to manage your business from anywhere." },
+              { q: "How secure is my data?", a: "We use bank-grade encryption to protect your data. Your information is stored securely on cloud servers with regular backups." },
+              { q: "Do you offer support?", a: "Yes, we offer dedicated support via phone, email, and chat. Our team is available to help you with any questions or issues." }
+            ].map((faq, i) => (
+              <div key={i} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <button 
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full px-6 py-4 text-left flex items-center justify-between font-bold text-slate-900 hover:bg-slate-50 transition-colors"
+                >
+                  {faq.q}
+                  {openFaq === i ? <ChevronUp className="w-5 h-5 text-emerald-600" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+                </button>
+                <motion.div 
+                  initial={false}
+                  animate={{ height: openFaq === i ? 'auto' : 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="px-6 pb-6 text-slate-600 leading-relaxed border-t border-slate-50 pt-4">
+                    {faq.a}
+                  </div>
+                </motion.div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Form Section */}
+      <section className="py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+            <div>
+              <h2 className="text-sm font-bold text-emerald-600 uppercase tracking-[0.2em] mb-4">Contact Us</h2>
+              <h3 className="text-4xl font-bold mb-6 tracking-tight">Get in touch with our team</h3>
+              <p className="text-lg text-slate-600 mb-12">
+                Have questions about Johar Billing? We're here to help. Fill out the form or reach out to us directly.
+              </p>
+              
+              <div className="space-y-8">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center shrink-0">
+                    <MapPin className="w-6 h-6 text-emerald-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-lg mb-1">Visit Us</h4>
+                    <p className="text-slate-600">123 Main Road, Ranchi, Jharkhand 834001</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center shrink-0">
+                    <Mail className="w-6 h-6 text-emerald-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-lg mb-1">Email Us</h4>
+                    <p className="text-slate-600">support@joharbilling.com</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center shrink-0">
+                    <Phone className="w-6 h-6 text-emerald-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-lg mb-1">Call Us</h4>
+                    <p className="text-slate-600">+91 98765 43210</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100">
+              <form className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700">First Name</label>
+                    <input type="text" className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-emerald-500/20" placeholder="John" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700">Last Name</label>
+                    <input type="text" className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-emerald-500/20" placeholder="Doe" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">Email Address</label>
+                  <input type="email" className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-emerald-500/20" placeholder="john@example.com" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">Message</label>
+                  <textarea rows={4} className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-emerald-500/20" placeholder="How can we help you?" />
+                </div>
+                <button type="submit" className="w-full bg-emerald-600 text-white py-4 rounded-xl font-bold hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2">
+                  Send Message <Send className="w-4 h-4" />
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-24 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -320,12 +596,53 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
             © 2026 Johar Billing Solutions. All rights reserved. Mardibros
           </p>
           <div className="flex items-center gap-6">
-            <a href="#" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">Privacy</a>
-            <a href="#" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">Terms</a>
-            <a href="#" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">Contact</a>
+            <button onClick={() => setActivePolicy('privacy')} className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">Privacy Policy</button>
+            <button onClick={() => setActivePolicy('terms')} className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">Terms of Service</button>
+            <button onClick={() => setActivePolicy('refund')} className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">Refund Policy</button>
           </div>
         </div>
       </footer>
+      <PolicyModal
+        isOpen={activePolicy === 'privacy'}
+        onClose={() => setActivePolicy(null)}
+        title="Privacy Policy"
+      >
+        <p>At Johar Billing, we take your privacy seriously. This Privacy Policy describes how we collect, use, and protect your personal information.</p>
+        <h3 className="text-lg font-bold text-slate-900 mt-4">Information We Collect</h3>
+        <p>We collect information you provide directly to us, such as when you create an account, subscribe to our service, or contact us for support. This may include your name, email address, phone number, and business details.</p>
+        <h3 className="text-lg font-bold text-slate-900 mt-4">How We Use Your Information</h3>
+        <p>We use your information to provide, maintain, and improve our services, process transactions, send you technical notices and support messages, and communicate with you about products, services, and events.</p>
+        <h3 className="text-lg font-bold text-slate-900 mt-4">Data Security</h3>
+        <p>We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.</p>
+      </PolicyModal>
+
+      <PolicyModal
+        isOpen={activePolicy === 'terms'}
+        onClose={() => setActivePolicy(null)}
+        title="Terms of Service"
+      >
+        <p>Welcome to Johar Billing. By accessing or using our website and services, you agree to be bound by these Terms of Service.</p>
+        <h3 className="text-lg font-bold text-slate-900 mt-4">Use of Service</h3>
+        <p>You must be at least 18 years old to use our services. You agree to use the service only for lawful purposes and in accordance with these Terms.</p>
+        <h3 className="text-lg font-bold text-slate-900 mt-4">Account Security</h3>
+        <p>You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account.</p>
+        <h3 className="text-lg font-bold text-slate-900 mt-4">Intellectual Property</h3>
+        <p>The service and its original content, features, and functionality are and will remain the exclusive property of Johar Billing and its licensors.</p>
+      </PolicyModal>
+
+      <PolicyModal
+        isOpen={activePolicy === 'refund'}
+        onClose={() => setActivePolicy(null)}
+        title="Refund Policy"
+      >
+        <p>We want you to be completely satisfied with Johar Billing. If you are not satisfied with our service, please review our refund policy below.</p>
+        <h3 className="text-lg font-bold text-slate-900 mt-4">Free Trial</h3>
+        <p>We offer a 14-day free trial for all new users. You can cancel anytime during the trial period without being charged.</p>
+        <h3 className="text-lg font-bold text-slate-900 mt-4">Subscription Refunds</h3>
+        <p>For paid subscriptions, we generally do not offer refunds for partial months or years of service. However, if you believe you have been charged in error or have a special circumstance, please contact our support team.</p>
+        <h3 className="text-lg font-bold text-slate-900 mt-4">Cancellation</h3>
+        <p>You can cancel your subscription at any time from your account settings. Your access will continue until the end of your current billing period.</p>
+      </PolicyModal>
     </div>
   );
 }
