@@ -5,12 +5,19 @@ test('app loads and shows login or dashboard', async ({ page }) => {
 
   // Check if we are on the login page or dashboard
   // The app might show "Sign in to your account" or "Dashboard"
+  // Wait for network idle to ensure page is loaded
+  await page.waitForLoadState('networkidle');
+  
   const bodyText = await page.locator('body').textContent();
   
-  if (bodyText?.includes('Sign in to your account')) {
-    await expect(page.locator('text=Sign in to your account')).toBeVisible();
+  if (bodyText?.includes('Johar Billing')) {
+    // Landing page
+    await expect(page.locator('text=Modern Billing for Jharkhand Businesses')).toBeVisible();
+  } else if (bodyText?.includes('Sign In')) {
+    // Login page
+    await expect(page.locator('input[type="email"]')).toBeVisible();
   } else {
-    // If it auto-logs in or skips login
+    // Dashboard (if auto-logged in)
     await expect(page.locator('text=Dashboard').first()).toBeVisible();
   }
 });

@@ -5,6 +5,12 @@ test.describe('Tenant Management Flow', () => {
     // 1. Navigate to the app
     await page.goto('/');
 
+    // Check if landing page is visible and click Login
+    const navLoginButton = page.locator('nav button:has-text("Login")');
+    if (await navLoginButton.isVisible()) {
+      await navLoginButton.click();
+    }
+
     // 2. Log in using the admin bypass credentials
     // Wait for the login form to appear
     await expect(page.locator('input[type="email"]')).toBeVisible();

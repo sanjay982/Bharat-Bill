@@ -3,22 +3,38 @@ import { vi, describe, it, expect } from 'vitest';
 import App from './App';
 
 // Mock Supabase
-vi.mock('./lib/supabase', () => ({
-  supabase: {
-    auth: {
-      getSession: vi.fn().mockResolvedValue({ 
-        data: { 
-          session: { 
-            user: { id: 'test-user', email: 'sanju13july@gmail.com' } 
+vi.mock('./lib/supabase', () => {
+  const mockFrom = () => ({
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    insert: vi.fn().mockResolvedValue({ data: [], error: null }),
+    update: vi.fn().mockResolvedValue({ data: [], error: null }),
+    delete: vi.fn().mockResolvedValue({ data: [], error: null }),
+    single: vi.fn().mockResolvedValue({ data: {}, error: null }),
+    then: vi.fn().mockImplementation((callback) => callback({ data: [], error: null })),
+  });
+
+  return {
+    supabase: {
+      auth: {
+        getSession: vi.fn().mockResolvedValue({ 
+          data: { 
+            session: { 
+              user: { id: 'test-user', email: 'sanju13july@gmail.com' } 
+            } 
           } 
-        } 
-      }),
-      onAuthStateChange: vi.fn().mockReturnValue({ 
-        data: { subscription: { unsubscribe: vi.fn() } } 
-      }),
+        }),
+        onAuthStateChange: vi.fn().mockReturnValue({ 
+          data: { subscription: { unsubscribe: vi.fn() } } 
+        }),
+        signOut: vi.fn(),
+        signInWithPassword: vi.fn().mockResolvedValue({ data: { user: { id: 'test-user' } }, error: null }),
+      },
+      from: vi.fn().mockImplementation(mockFrom),
     },
-  },
-}));
+  };
+});
 
 // Mock window.confirm
 window.confirm = vi.fn(() => true);

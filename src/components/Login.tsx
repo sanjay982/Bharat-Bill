@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { LogIn, Mail, Lock, AlertCircle, Loader2, ShieldCheck, ArrowUpRight } from 'lucide-react';
+import { LogIn, Mail, Lock, AlertCircle, Loader2, ShieldCheck, ArrowUpRight, User } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../utils';
 import { SpaceBackground } from './SpaceBackground';
@@ -45,29 +45,61 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
     }
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [fullName, setFullName] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setMessage(null);
 
     try {
-      // Special bypass for superadmin temporary password
-      if (email.toLowerCase() === 'sanju13july@gmail.com' && password === 'Admin') {
-        onLoginSuccess({ email: 'sanju13july@gmail.com', id: 'bypass-user' });
-        return;
-      }
+      if (isSignUp) {
+        if (password !== confirmPassword) {
+          throw new Error("Passwords don't match");
+        }
 
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+              role: 'user', // Default role for new signups
+              plan: 'trial' // Default plan
+            }
+          }
+        });
 
-      if (authError) throw authError;
-      if (data.user) {
-        onLoginSuccess(data.user);
+        if (signUpError) throw signUpError;
+
+        if (data.user) {
+          setMessage('Account created successfully! Please check your email to confirm your account.');
+          setIsSignUp(false);
+          // Optional: Automatically log them in if email confirmation is disabled
+          // onLoginSuccess(data.user); 
+        }
+      } else {
+        // Special bypass for superadmin temporary password
+        if (email.toLowerCase() === 'sanju13july@gmail.com' && password === 'Admin') {
+          onLoginSuccess({ email: 'sanju13july@gmail.com', id: 'bypass-user' });
+          return;
+        }
+
+        const { data, error: authError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (authError) throw authError;
+        if (data.user) {
+          onLoginSuccess(data.user);
+        }
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to login. Please check your credentials.');
+      setError(err.message || `Failed to ${isSignUp ? 'sign up' : 'login'}. Please check your details.`);
     } finally {
       setLoading(false);
     }
@@ -153,10 +185,27 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
               <ArrowUpRight className="w-10 h-10 text-emerald-600" />
             </div>
             <h1 className="text-2xl font-bold text-slate-900">Johar Billing</h1>
-            <p className="text-slate-500 text-sm mt-1">Secure access to your dashboard</p>
+            <p className="text-slate-500 text-sm mt-1">{isSignUp ? 'Create your account' : 'Secure access to your dashboard'}</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleAuth} className="space-y-6">
+            {isSignUp && (
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700 ml-1">Full Name</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="text"
+                    required
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    placeholder="John Doe"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700 ml-1">Email Address</label>
               <div className="relative">
@@ -179,14 +228,16 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
             <div className="space-y-2">
               <div className="flex justify-between items-center ml-1">
                 <label className="text-sm font-bold text-slate-700">Password</label>
-                <button
-                  type="button"
-                  onClick={handleForgotPassword}
-                  disabled={resetLoading}
-                  className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 disabled:text-emerald-400 transition-colors"
-                >
-                  {resetLoading ? 'Sending...' : 'Forgot Password?'}
-                </button>
+                {!isSignUp && (
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={resetLoading}
+                    className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 disabled:text-emerald-400 transition-colors"
+                  >
+                    {resetLoading ? 'Sending...' : 'Forgot Password?'}
+                  </button>
+                )}
               </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -200,6 +251,23 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
                 />
               </div>
             </div>
+
+            {isSignUp && (
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700 ml-1">Confirm Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    placeholder="••••••••"
+                  />
+                </div>
+              </div>
+            )}
 
             {message && (
               <motion.div 
@@ -232,37 +300,51 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <>
-                  <span>Sign In</span>
+                  <span>{isSignUp ? 'Create Account' : 'Sign In'}</span>
                   <LogIn className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </>
               )}
             </button>
 
-            <div className="relative py-2">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-100"></div>
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-slate-400">Temporary Access</span>
-              </div>
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setIsSignUp(!isSignUp)}
+                className="text-sm text-slate-500 hover:text-emerald-600 font-medium transition-colors"
+              >
+                {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+              </button>
             </div>
 
-            <button
-              type="button"
-              onClick={() => onLoginSuccess({ email: 'Sanju13july@gmail.com', id: 'bypass-user' })}
-              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
-            >
-              <ShieldCheck className="w-5 h-5" />
-              <span>Bypass Login (Admin)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onLoginSuccess({ email: 'test@joharbilling.test', id: '4' })}
-              className="w-full bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 mt-2"
-            >
-              <ShieldCheck className="w-5 h-5" />
-              <span>Login as Test Tenant</span>
-            </button>
+            {!isSignUp && (
+              <>
+                <div className="relative py-2">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-100"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white px-2 text-slate-400">Temporary Access</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => onLoginSuccess({ email: 'Sanju13july@gmail.com', id: 'bypass-user' })}
+                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+                >
+                  <ShieldCheck className="w-5 h-5" />
+                  <span>Bypass Login (Admin)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onLoginSuccess({ email: 'test@joharbilling.test', id: '4' })}
+                  className="w-full bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 mt-2"
+                >
+                  <ShieldCheck className="w-5 h-5" />
+                  <span>Login as Test Tenant</span>
+                </button>
+              </>
+            )}
           </form>
 
           <div className="mt-10 pt-6 border-t border-slate-100 text-center">

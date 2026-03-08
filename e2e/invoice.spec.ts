@@ -4,6 +4,16 @@ test.describe('Invoice Management Flow', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the app and log in
     await page.goto('/');
+
+    // Check if landing page is visible and click Login
+    // We use .first() because there might be multiple "Login" texts or buttons, 
+    // but the nav button is usually first or we can target specific class if needed.
+    // Better to target the specific button in the nav.
+    const navLoginButton = page.locator('nav button:has-text("Login")');
+    if (await navLoginButton.isVisible()) {
+      await navLoginButton.click();
+    }
+
     await page.fill('input[type="email"]', 'sanju13july@gmail.com');
     await page.fill('input[type="password"]', 'Admin');
     await page.click('button:has-text("Sign In")');

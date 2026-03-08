@@ -437,6 +437,7 @@ export default function App() {
   };
 
   const checkLimit = (type: 'invoice' | 'customer' | 'product' | 'report') => {
+    if (isAdmin) return true;
     if (userPlan !== 'trial') return true;
 
     const limits = {
@@ -2232,6 +2233,7 @@ export default function App() {
           activeTenantId={activeTenantId}
           onSave={async (invoice) => {
             try {
+              console.log('Saving invoice...', invoice);
               if (user && user.id !== 'bypass-user') {
                 const { data: invData, error: invError } = await supabase
                   .from('invoices')
@@ -2249,9 +2251,18 @@ export default function App() {
                   }])
                   .select();
 
-                if (invError) throw invError;
+                if (invError) {
+                  console.error('Error inserting invoice:', invError);
+                  throw invError;
+                }
+
+                if (!invData || invData.length === 0) {
+                  throw new Error('No data returned from invoice insertion');
+                }
 
                 const invoiceId = invData[0].id;
+                console.log('Invoice inserted with ID:', invoiceId);
+
                 const itemsToInsert = invoice.items.map(item => ({
                   invoice_id: invoiceId,
                   product_id: item.productId,
@@ -2268,9 +2279,14 @@ export default function App() {
                   .from('invoice_items')
                   .insert(itemsToInsert);
 
-                if (itemsError) throw itemsError;
+                if (itemsError) {
+                  console.error('Error inserting invoice items:', itemsError);
+                  throw itemsError;
+                }
                 
                 invoice.id = invoiceId;
+              } else {
+                console.warn('User not logged in or is bypass-user. Skipping Supabase insert.');
               }
               
               setInvoices([invoice, ...invoices]);
@@ -2283,6 +2299,7 @@ export default function App() {
                 'invoices'
               );
             } catch (err: any) {
+              console.error('Failed to save invoice:', err);
               showToast(err.message || 'Failed to save invoice', 'error');
             }
           }}

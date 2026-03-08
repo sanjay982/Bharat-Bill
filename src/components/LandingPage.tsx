@@ -143,8 +143,8 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
               <div className="absolute -inset-4 bg-emerald-500/10 blur-3xl rounded-full" />
               <div className="relative bg-slate-900 rounded-[2.5rem] p-4 shadow-2xl border border-slate-800">
                 <img 
-                  src="https://picsum.photos/seed/dashboard/1200/800" 
-                  alt="Dashboard Preview" 
+                  src="https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=1200&h=800&auto=format&fit=crop" 
+                  alt="Happy shopkeeper doing billing" 
                   className="rounded-[1.5rem] shadow-lg"
                   referrerPolicy="no-referrer"
                 />
@@ -317,7 +317,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
             <span className="text-lg font-bold tracking-tight text-slate-900">Johar Billing</span>
           </div>
           <p className="text-sm text-slate-500">
-            © {new Date().getFullYear()} Johar Billing Solutions. All rights reserved. Made for Jharkhand.
+            © 2026 Johar Billing Solutions. All rights reserved. Mardibros
           </p>
           <div className="flex items-center gap-6">
             <a href="#" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">Privacy</a>
