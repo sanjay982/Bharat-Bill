@@ -109,7 +109,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Trusted by 500+ Jharkhand Shops</span>
               </div>
               <h1 className="text-5xl md:text-7xl font-bold leading-[1.1] mb-6 tracking-tight">
-                Modern Billing for <span className="text-emerald-600">Jharkhand</span> Businesses
+                Modern Billing for <span className="text-emerald-600">Your</span> Businesses
               </h1>
               <p className="text-xl text-slate-600 mb-10 leading-relaxed max-w-xl">
                 The most powerful GST billing and inventory management system designed specifically for kirana stores, retail shops, and small businesses.
