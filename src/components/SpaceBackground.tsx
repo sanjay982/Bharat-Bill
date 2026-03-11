@@ -57,8 +57,8 @@ export const SpaceBackground: React.FC = () => {
         const y = cy + (star.y / star.z) * canvas.width;
         
         // Calculate scale based on distance
-        const scale = (canvas.width - star.z) / canvas.width;
-        const radius = star.radius * scale * 2;
+        const scale = Math.max(0, (canvas.width - star.z) / canvas.width);
+        const radius = Math.max(0, star.radius * scale * 2);
         
         // Draw star
         if (x >= 0 && x <= canvas.width && y >= 0 && y <= canvas.height) {

@@ -117,8 +117,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className={cn(
-          "w-full bg-white/95 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-slate-900/50 border border-white/20 overflow-hidden flex flex-col md:flex-row relative z-10",
-          adConfig?.enabled ? "max-w-5xl" : "max-w-md"
+          "w-full bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-slate-900/50 border border-white/20 overflow-hidden flex flex-col md:flex-row relative z-10",
+          adConfig?.enabled ? "max-w-4xl" : "max-w-md"
         )}
       >
         {adConfig?.enabled && (
@@ -173,16 +173,16 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
           </div>
         )}
 
-        <div className={cn("p-8 md:p-12 flex flex-col justify-center", adConfig?.enabled ? "md:w-1/2" : "w-full")}>
-          <div className="flex flex-col items-center mb-10">
-            <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-4">
-              <ArrowUpRight className="w-10 h-10 text-emerald-600" />
+        <div className={cn("p-6 md:p-10 flex flex-col justify-center", adConfig?.enabled ? "md:w-1/2" : "w-full")}>
+          <div className="flex flex-col items-center mb-6">
+            <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mb-3">
+              <ArrowUpRight className="w-8 h-8 text-emerald-600" />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">Johar Billing</h1>
-            <p className="text-slate-500 text-sm mt-1">{isSignUp ? 'Create your account' : 'Secure access to your dashboard'}</p>
+            <h1 className="text-xl font-bold text-slate-900">Johar Billing</h1>
+            <p className="text-slate-500 text-xs mt-1">{isSignUp ? 'Create your account' : 'Secure access to your dashboard'}</p>
           </div>
 
-          <form onSubmit={handleAuth} className="space-y-6">
+          <form onSubmit={handleAuth} className="space-y-4">
             {isSignUp && (
               <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-700 ml-1">Full Name</label>
@@ -311,8 +311,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
             </div>
           </form>
 
-          <div className="mt-10 pt-6 border-t border-slate-100 text-center">
-            <p className="text-xs text-slate-400 leading-relaxed">
+          <div className="mt-8 pt-4 border-t border-slate-100 text-center">
+            <p className="text-[10px] text-slate-400 leading-relaxed">
               Only authorized personnel can access this system.
               <br />
               Contact the administrator for access.
