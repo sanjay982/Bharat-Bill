@@ -208,7 +208,7 @@ export default function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      if (session?.user && session.user.id !== 'bypass-user') {
+      if (session?.user) {
         fetchData(session.user.id);
       }
       setAuthLoading(false);
@@ -216,7 +216,7 @@ export default function App() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
-      if (session?.user && session.user.id !== 'bypass-user') {
+      if (session?.user) {
         fetchData(session.user.id);
       }
       if (event === 'PASSWORD_RECOVERY') {
@@ -332,11 +332,6 @@ export default function App() {
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (user?.id === 'bypass-user') {
-      showToast('Security Feature: Password updates require a valid authentication session. Please sign in with your email and password to use this feature.', 'error');
-      return;
-    }
 
     if (newPassword !== confirmPassword) {
       showToast('Passwords do not match', 'error');
@@ -1406,7 +1401,12 @@ export default function App() {
                   <td className="px-6 py-4 text-sm text-slate-600">{tenant.nextBillingDate || 'N/A'}</td>
                   <td className="px-6 py-4 text-sm font-bold text-slate-900">{tenant.amount ? formatCurrency(tenant.amount) : '-'}</td>
                   <td className="px-6 py-4">
-                    <button className="text-xs font-bold text-emerald-600 hover:underline">Manage Plan</button>
+                    <button 
+                      onClick={() => setIsPricingModalOpen(true)}
+                      className="text-xs font-bold text-emerald-600 hover:underline"
+                    >
+                      Manage Plan
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -2469,7 +2469,7 @@ export default function App() {
           onSave={async (invoice) => {
             try {
               console.log('Saving invoice...', invoice);
-              if (user && user.id !== 'bypass-user') {
+              if (user) {
                 const { data: invData, error: invError } = await supabase
                   .from('invoices')
                   .insert([{
@@ -2521,8 +2521,6 @@ export default function App() {
                 }
                 
                 invoice.id = invoiceId;
-              } else {
-                console.warn('User not logged in or is bypass-user. Skipping Supabase insert.');
               }
               
               setInvoices([invoice, ...invoices]);
@@ -2566,7 +2564,7 @@ export default function App() {
           editingProduct={editingProduct}
           onSave={async (product) => {
             try {
-              if (user && user.id !== 'bypass-user') {
+              if (user) {
                 if (editingProduct) {
                   const { error } = await supabase
                     .from('products')
@@ -2662,7 +2660,7 @@ export default function App() {
           editingCustomer={editingCustomer}
           onSave={async (customer) => {
             try {
-              if (user && user.id !== 'bypass-user') {
+              if (user) {
                 if (editingCustomer) {
                   const { error } = await supabase
                     .from('contacts')

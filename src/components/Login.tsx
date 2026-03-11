@@ -82,12 +82,6 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
           // onLoginSuccess(data.user); 
         }
       } else {
-        // Special bypass for superadmin temporary password
-        if (email.toLowerCase() === 'sanju13july@gmail.com' && password === 'Admin') {
-          onLoginSuccess({ email: 'sanju13july@gmail.com', id: 'bypass-user' });
-          return;
-        }
-
         const { data, error: authError } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -315,36 +309,6 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
                 {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
               </button>
             </div>
-
-            {!isSignUp && (
-              <>
-                <div className="relative py-2">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-slate-100"></div>
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-2 text-slate-400">Temporary Access</span>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => onLoginSuccess({ email: 'Sanju13july@gmail.com', id: 'bypass-user' })}
-                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
-                >
-                  <ShieldCheck className="w-5 h-5" />
-                  <span>Bypass Login (Admin)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onLoginSuccess({ email: 'test@joharbilling.test', id: '4' })}
-                  className="w-full bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 mt-2"
-                >
-                  <ShieldCheck className="w-5 h-5" />
-                  <span>Login as Test Tenant</span>
-                </button>
-              </>
-            )}
           </form>
 
           <div className="mt-10 pt-6 border-t border-slate-100 text-center">
