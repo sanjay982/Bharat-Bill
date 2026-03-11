@@ -287,7 +287,8 @@ export default function App() {
           totalAmount: Number(inv.total_amount),
           status: inv.status,
           type: inv.type,
-          items: inv.invoice_items.map((item: any) => ({
+          invoiceType: inv.invoice_type,
+          items: inv.invoice_items?.map((item: any) => ({
             id: item.id,
             productId: item.product_id,
             name: item.name,
@@ -297,7 +298,7 @@ export default function App() {
             gstRate: item.gst_rate,
             amount: Number(item.amount),
             gstAmount: Number(item.gst_amount)
-          }))
+          })) || []
         })));
       }
     } catch (err) {
@@ -2480,6 +2481,7 @@ export default function App() {
                     total_amount: invoice.totalAmount,
                     status: invoice.status,
                     type: invoice.type,
+                    invoice_type: invoice.invoiceType,
                     user_id: user.id
                   }])
                   .select();

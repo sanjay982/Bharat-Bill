@@ -7,6 +7,7 @@ export interface Product {
   stock: number;
   unit: string;
   gstRate: number;
+  tenantId?: string;
 }
 
 export interface Contact {
