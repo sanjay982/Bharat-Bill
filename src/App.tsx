@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -182,6 +182,40 @@ export default function App() {
   const [quotations, setQuotations] = useState<Quotation[]>(MOCK_QUOTATIONS);
   const [tenants, setTenants] = useState<Tenant[]>(MOCK_TENANTS);
   const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
+
+  const chartData = useMemo(() => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const data = months.map(month => ({ name: month, sales: 0 }));
+    
+    invoices.forEach(invoice => {
+      const date = new Date(invoice.date);
+      const month = date.getMonth();
+      if (month >= 0 && month < 12) {
+        data[month].sales += invoice.totalAmount;
+      }
+    });
+    
+    return data;
+  }, [invoices]);
+
+  const salesByCategory = useMemo(() => {
+    const categoryMap: Record<string, string> = {
+      '8471': 'Electronics',
+      '9403': 'Furniture',
+      '8528': 'Electronics',
+    };
+    const categorySales: Record<string, number> = {};
+    
+    invoices.forEach(invoice => {
+      invoice.items.forEach(item => {
+        const product = products.find(p => p.id === item.productId);
+        const category = product ? (categoryMap[product.hsnCode] || 'Other') : 'Other';
+        categorySales[category] = (categorySales[category] || 0) + item.amount;
+      });
+    });
+    
+    return Object.entries(categorySales).map(([name, value]) => ({ name, value }));
+  }, [invoices, products]);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [activeTenantId, setActiveTenantId] = useState('1');
   const [isNewInvoiceModalOpen, setIsNewInvoiceModalOpen] = useState(false);
@@ -755,7 +789,7 @@ export default function App() {
           </div>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%" minHeight={300}>
-              <AreaChart data={CHART_DATA}>
+              <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
@@ -1816,31 +1850,36 @@ export default function App() {
     </div>
   );
 
-  const renderReports = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard 
-          title="Total Revenue" 
-          value={formatCurrency(1542000)} 
-          icon={<TrendingUp className="w-5 h-5" />} 
-          trend="+18.2%" 
-          trendType="up" 
-        />
-        <StatCard 
-          title="Total GST Collected" 
-          value={formatCurrency(277560)} 
-          icon={<ShieldCheck className="w-5 h-5" />} 
-          trend="+15.4%" 
-          trendType="up" 
-        />
-        <StatCard 
-          title="Outstanding Amount" 
-          value={formatCurrency(85400)} 
-          icon={<AlertTriangle className="w-5 h-5" />} 
-          trend="-5.2%" 
-          trendType="down" 
-        />
-      </div>
+  const renderReports = () => {
+    const totalRevenue = invoices.filter(i => i.status === 'paid').reduce((sum, i) => sum + i.totalAmount, 0);
+    const totalGst = invoices.reduce((sum, i) => sum + i.totalGst, 0);
+    const outstandingAmount = invoices.filter(i => i.status !== 'paid').reduce((sum, i) => sum + i.totalAmount, 0);
+
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <StatCard 
+            title="Total Revenue" 
+            value={formatCurrency(totalRevenue)} 
+            icon={<TrendingUp className="w-5 h-5" />} 
+            trend="+18.2%" 
+            trendType="up" 
+          />
+          <StatCard 
+            title="Total GST Collected" 
+            value={formatCurrency(totalGst)} 
+            icon={<ShieldCheck className="w-5 h-5" />} 
+            trend="+15.4%" 
+            trendType="up" 
+          />
+          <StatCard 
+            title="Outstanding Amount" 
+            value={formatCurrency(outstandingAmount)} 
+            icon={<AlertTriangle className="w-5 h-5" />} 
+            trend="-5.2%" 
+            trendType="down" 
+          />
+        </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
@@ -1849,12 +1888,7 @@ export default function App() {
             <ResponsiveContainer width="100%" height="100%" minHeight={300}>
               <PieChart>
                 <Pie
-                  data={[
-                    { name: 'Electronics', value: 45 },
-                    { name: 'Furniture', value: 25 },
-                    { name: 'Services', value: 20 },
-                    { name: 'Other', value: 10 },
-                  ]}
+                  data={salesByCategory}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -1862,8 +1896,8 @@ export default function App() {
                   paddingAngle={5}
                   dataKey="value"
                 >
-                  {[ '#10b981', '#3b82f6', '#f59e0b', '#ef4444' ].map((color, index) => (
-                    <Cell key={`cell-${index}`} fill={color} />
+                  {salesByCategory.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={[ '#10b981', '#3b82f6', '#f59e0b', '#ef4444' ][index % 4]} />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -1871,22 +1905,12 @@ export default function App() {
             </ResponsiveContainer>
           </div>
           <div className="grid grid-cols-2 gap-4 mt-4">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-emerald-500" />
-              <span className="text-sm text-slate-600">Electronics (45%)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-blue-500" />
-              <span className="text-sm text-slate-600">Furniture (25%)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-amber-500" />
-              <span className="text-sm text-slate-600">Services (20%)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-rose-500" />
-              <span className="text-sm text-slate-600">Other (10%)</span>
-            </div>
+            {salesByCategory.map((cat, index) => (
+              <div key={cat.name} className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: [ '#10b981', '#3b82f6', '#f59e0b', '#ef4444' ][index % 4] }} />
+                <span className="text-sm text-slate-600">{cat.name} ({Math.round((cat.value / salesByCategory.reduce((sum, c) => sum + c.value, 0)) * 100)}%)</span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -1894,7 +1918,7 @@ export default function App() {
           <h3 className="text-lg font-semibold mb-6">Monthly GST Report</h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%" minHeight={300}>
-              <BarChart data={CHART_DATA}>
+              <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
                 <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
@@ -1950,7 +1974,8 @@ export default function App() {
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   const renderPlans = () => {
     const plans = [
@@ -2754,9 +2779,9 @@ export default function App() {
             showToast(`Successfully upgraded to ${plan} plan!`);
           }}
         />
-      </div>
-    );
-  }
+    </div>
+  );
+}
 
 function NavItem({ icon, label, active, onClick, collapsed, primaryColor }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void, collapsed: boolean, primaryColor: string }) {
   return (
