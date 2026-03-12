@@ -47,8 +47,9 @@ export interface Invoice {
   totalAmount: number;
   status: 'paid' | 'unpaid' | 'overdue';
   notes?: string;
-  type: 'sale' | 'purchase';
+  type: 'sale' | 'purchase' | 'credit_note' | 'debit_note';
   invoiceType?: 'b2b' | 'b2c';
+  originalInvoiceId?: string;
 }
 
 export interface Quotation {
@@ -118,4 +119,13 @@ export interface AppNotification {
   view?: View;
 }
 
-export type View = 'dashboard' | 'invoices' | 'quotations' | 'inventory' | 'customers' | 'vendors' | 'settings' | 'tenants' | 'billing' | 'plans' | 'notifications' | 'reports' | 'cms';
+export type View = 'dashboard' | 'invoices' | 'quotations' | 'inventory' | 'customers' | 'vendors' | 'settings' | 'tenants' | 'billing' | 'plans' | 'notifications' | 'reports' | 'cms' | 'users';
+
+export interface WorkspaceUser {
+  id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'manager' | 'staff';
+  status: 'active' | 'inactive';
+  tenantId: string;
+}

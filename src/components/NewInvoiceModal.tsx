@@ -10,15 +10,19 @@ interface NewInvoiceModalProps {
   onClose: () => void;
   products: Product[];
   contacts: Contact[];
+  invoices: Invoice[];
   activeTenantId: string;
   onSave: (invoice: Invoice) => void;
 }
 
-export function NewInvoiceModal({ isOpen, onClose, products, contacts, activeTenantId, onSave }: NewInvoiceModalProps) {
+export function NewInvoiceModal({ isOpen, onClose, products, contacts, invoices, activeTenantId, onSave }: NewInvoiceModalProps) {
   const [items, setItems] = useState<Partial<InvoiceItem>[]>([]);
   const [selectedContactId, setSelectedContactId] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState(`INV-${format(new Date(), 'yyyy')}-${Math.floor(1000 + Math.random() * 9000)}`);
+  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [dueDate, setDueDate] = useState(format(new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'));
+  const [type, setType] = useState<'sale' | 'purchase' | 'credit_note' | 'debit_note'>('sale');
+  const [originalInvoiceId, setOriginalInvoiceId] = useState('');
 
   const addItem = () => {
     setItems([...items, { id: Math.random().toString(36).substr(2, 9), quantity: 1, price: 0, gstRate: 18, amount: 0, gstAmount: 0 }]);
@@ -76,7 +80,7 @@ export function NewInvoiceModal({ isOpen, onClose, products, contacts, activeTen
     const newInvoice: Invoice = {
       id: Math.random().toString(36).substr(2, 9),
       invoiceNumber,
-      date: format(new Date(), 'yyyy-MM-dd'),
+      date,
       dueDate,
       contactId: selectedContactId,
       tenantId: activeTenantId,
@@ -85,13 +89,16 @@ export function NewInvoiceModal({ isOpen, onClose, products, contacts, activeTen
       totalGst,
       totalAmount,
       status: 'unpaid',
-      type: 'sale',
+      type,
+      originalInvoiceId: (type === 'credit_note' || type === 'debit_note') ? originalInvoiceId : undefined,
       invoiceType: contacts.find(c => c.id === selectedContactId)?.customerType || 'b2b'
     };
     
     onSave(newInvoice);
     setItems([]);
     setSelectedContactId('');
+    setType('sale');
+    setOriginalInvoiceId('');
   };
 
   if (!isOpen) return null;
@@ -114,6 +121,19 @@ export function NewInvoiceModal({ isOpen, onClose, products, contacts, activeTen
         <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 md:space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Type</label>
+              <select 
+                value={type}
+                onChange={(e) => setType(e.target.value as any)}
+                className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
+              >
+                <option value="sale">Sale Invoice</option>
+                <option value="purchase">Purchase Invoice</option>
+                <option value="credit_note">Credit Note</option>
+                <option value="debit_note">Debit Note</option>
+              </select>
+            </div>
+            <div className="space-y-2">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Customer</label>
               <select 
                 value={selectedContactId}
@@ -126,14 +146,43 @@ export function NewInvoiceModal({ isOpen, onClose, products, contacts, activeTen
                 ))}
               </select>
             </div>
+            {(type === 'credit_note' || type === 'debit_note') && (
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Original Invoice</label>
+                <select 
+                  value={originalInvoiceId}
+                  onChange={(e) => setOriginalInvoiceId(e.target.value)}
+                  className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
+                >
+                  <option value="">Select Invoice</option>
+                  {invoices.filter(i => i.contactId === selectedContactId && (type === 'credit_note' ? i.type === 'sale' : i.type === 'purchase')).map(i => (
+                    <option key={i.id} value={i.id}>{i.invoiceNumber} - {formatCurrency(i.totalAmount)}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Invoice Number</label>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                {type === 'credit_note' ? 'Credit Note Number' : type === 'debit_note' ? 'Debit Note Number' : 'Invoice Number'}
+              </label>
               <div className="relative">
                 <FileText className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input 
                   type="text" 
                   value={invoiceNumber}
                   onChange={(e) => setInvoiceNumber(e.target.value)}
+                  className="w-full bg-slate-50 border-none rounded-xl py-3 pl-11 pr-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Date</label>
+              <div className="relative">
+                <Calendar className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input 
+                  type="date" 
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
                   className="w-full bg-slate-50 border-none rounded-xl py-3 pl-11 pr-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
                 />
               </div>

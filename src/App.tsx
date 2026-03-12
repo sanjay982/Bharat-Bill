@@ -68,7 +68,7 @@ import { format } from 'date-fns';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import 'jspdf-autotable';
-import { Product, Contact, Invoice, Quotation, View, InvoiceItem, Tenant, AppConfig, AppNotification } from './types';
+import { Product, Contact, Invoice, Quotation, View, InvoiceItem, Tenant, AppConfig, AppNotification, WorkspaceUser } from './types';
 import { cn, formatCurrency, calculateGST } from './utils';
 import { supabase } from './lib/supabase';
 import { NewQuotationModal } from './components/NewQuotationModal';
@@ -158,6 +158,12 @@ const MOCK_NOTIFICATIONS: AppNotification[] = [
   { id: '4', title: 'System Update', message: 'Johar Billing v2.1 is now live with new features.', time: '2 days ago', read: true, type: 'info' },
 ];
 
+const MOCK_WORKSPACE_USERS: WorkspaceUser[] = [
+  { id: '1', name: 'Admin User', email: 'admin@joharbilling.com', role: 'admin', status: 'active', tenantId: '1' },
+  { id: '2', name: 'Store Manager', email: 'manager@joharbilling.com', role: 'manager', status: 'active', tenantId: '1' },
+  { id: '3', name: 'Sales Staff', email: 'staff@joharbilling.com', role: 'staff', status: 'active', tenantId: '1' },
+];
+
 const CHART_DATA = [
   { name: 'Jan', sales: 45000, expenses: 32000 },
   { name: 'Feb', sales: 52000, expenses: 38000 },
@@ -182,6 +188,7 @@ export default function App() {
   const [quotations, setQuotations] = useState<Quotation[]>(MOCK_QUOTATIONS);
   const [tenants, setTenants] = useState<Tenant[]>(MOCK_TENANTS);
   const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
+  const [workspaceUsers, setWorkspaceUsers] = useState<WorkspaceUser[]>(MOCK_WORKSPACE_USERS);
 
   const chartData = useMemo(() => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -223,12 +230,14 @@ export default function App() {
   const [isNewProductModalOpen, setIsNewProductModalOpen] = useState(false);
   const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false);
   const [isNewTenantModalOpen, setIsNewTenantModalOpen] = useState(false);
+  const [isNewUserModalOpen, setIsNewUserModalOpen] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [tenantSearchTerm, setTenantSearchTerm] = useState('');
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editingCustomer, setEditingCustomer] = useState<Contact | null>(null);
+  const [editingUser, setEditingUser] = useState<WorkspaceUser | null>(null);
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   const [feedback, setFeedback] = useState({ name: '', business: '', mobile: '', comments: '' });
   const [feedbackLoading, setFeedbackLoading] = useState(false);
@@ -322,6 +331,7 @@ export default function App() {
           totalAmount: Number(inv.total_amount),
           status: inv.status,
           type: inv.type,
+          originalInvoiceId: inv.original_invoice_id,
           invoiceType: inv.invoice_type,
           items: inv.invoice_items?.map((item: any) => ({
             id: item.id,
@@ -434,16 +444,26 @@ export default function App() {
     
     // Header
     doc.setFontSize(20);
-    doc.text('TAX INVOICE', 105, 20, { align: 'center' });
+    const title = invoice.type === 'credit_note' ? 'CREDIT NOTE' : invoice.type === 'debit_note' ? 'DEBIT NOTE' : 'TAX INVOICE';
+    doc.text(title, 105, 20, { align: 'center' });
     
     doc.setFontSize(10);
     doc.text(businessProfile.name, 20, 40);
     doc.text(`GSTIN: ${businessProfile.gstin}`, 20, 45);
     doc.text(businessProfile.address, 20, 50);
     
-    doc.text(`Invoice #: ${invoice.invoiceNumber}`, 140, 40);
+    const numberLabel = invoice.type === 'credit_note' ? 'Credit Note #' : invoice.type === 'debit_note' ? 'Debit Note #' : 'Invoice #';
+    doc.text(`${numberLabel}: ${invoice.invoiceNumber}`, 140, 40);
     doc.text(`Date: ${format(new Date(invoice.date), 'dd/MM/yyyy')}`, 140, 45);
-    doc.text(`Due Date: ${format(new Date(invoice.dueDate), 'dd/MM/yyyy')}`, 140, 50);
+    if (invoice.type === 'sale' || invoice.type === 'purchase') {
+      doc.text(`Due Date: ${format(new Date(invoice.dueDate), 'dd/MM/yyyy')}`, 140, 50);
+    }
+    if (invoice.originalInvoiceId) {
+      const originalInvoice = invoices.find(i => i.id === invoice.originalInvoiceId);
+      if (originalInvoice) {
+        doc.text(`Original Invoice #: ${originalInvoice.invoiceNumber}`, 140, 55);
+      }
+    }
     
     // Bill To
     doc.setFontSize(12);
@@ -749,6 +769,103 @@ export default function App() {
   );
 
   // Stats
+  const renderUsers = () => (
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="p-4 md:p-6 border-bottom border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <h2 className="text-xl font-bold">Workspace Users</h2>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Search users..." 
+              className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 w-full md:w-64"
+            />
+          </div>
+          <button 
+            onClick={() => {
+              setEditingUser(null);
+              setIsNewUserModalOpen(true);
+            }}
+            className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors"
+          >
+            <Plus className="w-4 h-4" /> Add User
+          </button>
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-slate-50/50 border-y border-slate-100">
+              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">User</th>
+              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
+              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Role</th>
+              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {workspaceUsers.map(workspaceUser => (
+              <tr key={workspaceUser.id} className="hover:bg-slate-50/50 transition-colors">
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 text-xs font-bold">
+                      {workspaceUser.name.charAt(0)}
+                    </div>
+                    <span className="text-sm font-medium text-slate-900">{workspaceUser.name}</span>
+                  </div>
+                </td>
+                <td className="px-6 py-4 text-sm text-slate-600">{workspaceUser.email}</td>
+                <td className="px-6 py-4">
+                  <span className={cn(
+                    "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                    workspaceUser.role === 'admin' ? "bg-purple-50 text-purple-700" :
+                    workspaceUser.role === 'manager' ? "bg-blue-50 text-blue-700" :
+                    "bg-slate-100 text-slate-600"
+                  )}>
+                    {workspaceUser.role}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <span className={cn(
+                    "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                    workspaceUser.status === 'active' ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
+                  )}>
+                    {workspaceUser.status}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => {
+                        setEditingUser(workspaceUser);
+                        setIsNewUserModalOpen(true);
+                      }}
+                      className="p-2 text-slate-400 hover:text-emerald-600 transition-colors"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => {
+                        if (window.confirm(`Are you sure you want to delete ${workspaceUser.name}?`)) {
+                          setWorkspaceUsers(workspaceUsers.filter(u => u.id !== workspaceUser.id));
+                          showToast('User deleted successfully');
+                        }
+                      }}
+                      className="p-2 text-slate-400 hover:text-rose-600 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
   const totalSales = invoices.filter(i => i.type === 'sale').reduce((acc, curr) => acc + curr.totalAmount, 0);
   const totalReceivables = invoices.filter(i => i.type === 'sale' && i.status === 'unpaid').reduce((acc, curr) => acc + curr.totalAmount, 0);
   const lowStockCount = products.filter(p => p.stock < 10).length;
@@ -1001,7 +1118,9 @@ export default function App() {
                 <td className="px-6 py-4 text-sm text-slate-600">
                   {contacts.find(c => c.id === invoice.contactId)?.name || 'Unknown'}
                 </td>
-                <td className="px-6 py-4 text-sm text-slate-500 uppercase">{invoice.invoiceType || 'b2b'}</td>
+                <td className="px-6 py-4 text-sm text-slate-500 uppercase">
+                  {invoice.type === 'credit_note' ? 'Credit Note' : invoice.type === 'debit_note' ? 'Debit Note' : invoice.invoiceType || 'b2b'}
+                </td>
                 <td className="px-6 py-4 text-sm text-slate-500">{format(new Date(invoice.date), 'dd MMM yyyy')}</td>
                 <td className="px-6 py-4 text-sm font-semibold text-slate-900">{formatCurrency(invoice.totalAmount)}</td>
                 <td className="px-6 py-4">
@@ -2188,6 +2307,9 @@ export default function App() {
           <NavItem icon={<FileText />} label="Quotations" active={currentView === 'quotations'} onClick={() => { setCurrentView('quotations'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
           <NavItem icon={<Package />} label="Inventory" active={currentView === 'inventory'} onClick={() => { setCurrentView('inventory'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
           <NavItem icon={<Users />} label="Customers" active={currentView === 'customers'} onClick={() => { setCurrentView('customers'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
+          {!isAdmin && (
+            <NavItem icon={<User />} label="Users" active={currentView === 'users'} onClick={() => { setCurrentView('users'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
+          )}
           {isAdmin && (
             <NavItem icon={<Building2 />} label="Tenants" active={currentView === 'tenants'} onClick={() => { setCurrentView('tenants'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
           )}
@@ -2397,6 +2519,7 @@ export default function App() {
               {currentView === 'purchases' && <div className="p-8 text-center text-slate-500">Purchases module is under development.</div>}
               {currentView === 'inventory' && renderInventory()}
               {currentView === 'customers' && renderCustomers()}
+              {currentView === 'users' && renderUsers()}
               {currentView === 'tenants' && isAdmin && renderTenants()}
               {currentView === 'billing' && isAdmin && renderBilling()}
               {currentView === 'plans' && renderPlans()}
@@ -2490,6 +2613,7 @@ export default function App() {
           onClose={() => setIsNewInvoiceModalOpen(false)} 
           products={products}
           contacts={contacts}
+          invoices={invoices}
           activeTenantId={activeTenantId}
           onSave={async (invoice) => {
             try {
@@ -2507,6 +2631,7 @@ export default function App() {
                     total_amount: invoice.totalAmount,
                     status: invoice.status,
                     type: invoice.type,
+                    original_invoice_id: invoice.originalInvoiceId,
                     invoice_type: invoice.invoiceType,
                     user_id: user.id
                   }])
@@ -2677,6 +2802,21 @@ export default function App() {
             } finally {
               setFeedbackLoading(false);
             }
+          }}
+        />
+        <NewUserModal
+          isOpen={isNewUserModalOpen}
+          onClose={() => setIsNewUserModalOpen(false)}
+          editingUser={editingUser}
+          onSave={(user) => {
+            if (editingUser) {
+              setWorkspaceUsers(workspaceUsers.map(u => u.id === editingUser.id ? { ...u, ...user } : u));
+              showToast('User updated successfully');
+            } else {
+              setWorkspaceUsers([...workspaceUsers, { ...user, id: Math.random().toString(36).substr(2, 9), tenantId: activeTenantId } as WorkspaceUser]);
+              showToast('User created successfully');
+            }
+            setIsNewUserModalOpen(false);
           }}
         />
         <NewCustomerModal
@@ -3451,6 +3591,112 @@ function PricingModal({ isOpen, onClose, onSelectPlan }: {
           </p>
         </div>
       </motion.div>
+    </div>
+  );
+}
+
+function NewUserModal({ isOpen, onClose, editingUser, onSave }: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  editingUser: WorkspaceUser | null;
+  onSave: (user: Partial<WorkspaceUser>) => void;
+}) {
+  const [formData, setFormData] = useState<Partial<WorkspaceUser>>({
+    name: '',
+    email: '',
+    role: 'staff',
+    status: 'active'
+  });
+
+  useEffect(() => {
+    if (editingUser) {
+      setFormData(editingUser);
+    } else {
+      setFormData({
+        name: '',
+        email: '',
+        role: 'staff',
+        status: 'active'
+      });
+    }
+  }, [editingUser, isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+        <div className="flex items-center justify-between p-6 border-b border-slate-100">
+          <h2 className="text-xl font-bold">{editingUser ? 'Edit User' : 'New User'}</h2>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
+            <input
+              type="text"
+              value={formData.name || ''}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
+              placeholder="Enter user name"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+            <input
+              type="email"
+              value={formData.email || ''}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
+              placeholder="Enter user email"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+            <select
+              value={formData.role || 'staff'}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
+              className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
+            >
+              <option value="admin">Admin</option>
+              <option value="manager">Manager</option>
+              <option value="staff">Staff</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+            <select
+              value={formData.status || 'active'}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+              className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+        
+        <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-xl transition-colors font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onSave(formData)}
+            className="px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl transition-colors font-medium"
+          >
+            {editingUser ? 'Save Changes' : 'Create User'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
