@@ -14,14 +14,14 @@ export function ParticleText({ text, className = "" }: ParticleTextProps) {
 
   return (
     <span 
-      className={`inline-block cursor-default ${className}`}
+      className={`inline cursor-default align-baseline ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {characters.map((char, index) => (
         <motion.span
           key={index}
-          className="inline-block whitespace-pre"
+          className="inline-block whitespace-pre align-baseline"
           animate={isHovered ? {
             opacity: [1, 0.8, 0],
             scale: [1, 0.4, 0.1],

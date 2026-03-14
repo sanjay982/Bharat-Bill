@@ -102,88 +102,101 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
       {/* Hero Section */}
       <section className="pt-32 pb-20 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div className="flex flex-col items-center text-center">
             <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
+              className="max-w-4xl w-full mb-16"
             >
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 mb-6">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Trusted by 500+ Jharkhand Shops</span>
               </div>
-              <h1 className="text-5xl md:text-7xl font-bold leading-[1.1] mb-6 tracking-tight">
-                <ParticleText text="Modern Billing for " />
-                <span className="text-emerald-600">
-                  <ParticleText text="Your" />
-                </span>
-                <ParticleText text=" Businesses" />
+              <h1 className="text-5xl md:text-8xl font-bold leading-[1.1] mb-8 tracking-tight">
+                <div className="flex flex-wrap justify-center gap-x-[0.3em]">
+                  <span className="whitespace-nowrap">
+                    <ParticleText text="Modern" />
+                  </span>
+                  <span className="whitespace-nowrap">
+                    <ParticleText text="Billing" />
+                  </span>
+                  <span className="whitespace-nowrap">
+                    <ParticleText text="for" />
+                  </span>
+                  <span className="text-emerald-600 whitespace-nowrap">
+                    <ParticleText text="Your" />
+                  </span>
+                  <span className="whitespace-nowrap">
+                    <ParticleText text="Businesses" />
+                  </span>
+                </div>
               </h1>
-              <p className="text-xl text-slate-600 mb-10 leading-relaxed max-w-xl">
+              <p className="text-xl md:text-2xl text-slate-600 mb-12 leading-relaxed max-w-2xl mx-auto">
                 The most powerful GST billing and inventory management system designed specifically for kirana stores, retail shops, and small businesses.
               </p>
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
                 <button 
                   onClick={onGetStarted}
-                  className="group bg-emerald-600 text-white px-8 py-4 rounded-2xl text-lg font-bold shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 active:scale-95"
+                  className="group bg-emerald-600 text-white px-10 py-5 rounded-2xl text-xl font-bold shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 active:scale-95 w-full sm:w-auto"
                 >
                   Get Started Free
                   <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
-                <button className="flex items-center justify-center gap-3 px-8 py-4 rounded-2xl text-lg font-bold text-slate-600 hover:bg-slate-50 transition-all">
-                  <div className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center">
-                    <Play className="w-4 h-4 text-emerald-600 fill-emerald-600" />
+                <button className="flex items-center justify-center gap-3 px-10 py-5 rounded-2xl text-xl font-bold text-slate-600 hover:bg-slate-50 transition-all w-full sm:w-auto">
+                  <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center">
+                    <Play className="w-5 h-5 text-emerald-600 fill-emerald-600" />
                   </div>
                   Watch Demo
                 </button>
               </div>
-              <div className="mt-12 flex items-center gap-6">
+              <div className="mt-16 flex flex-col items-center gap-6">
                 <div className="flex -space-x-3">
                   {[1, 2, 3, 4].map((i) => (
                     <img 
                       key={i}
                       src={`https://picsum.photos/seed/user${i}/100/100`} 
                       alt="User" 
-                      className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
+                      className="w-12 h-12 rounded-full border-2 border-white shadow-md"
                       referrerPolicy="no-referrer"
                     />
                   ))}
                 </div>
-                <p className="text-sm text-slate-500">
+                <p className="text-base text-slate-500">
                   Join <span className="font-bold text-slate-900">2,000+</span> shop owners growing with us
                 </p>
               </div>
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, scale: 0.8, rotate: 5 }}
-              animate={{ opacity: 1, scale: 1, rotate: 0 }}
-              transition={{ duration: 1, delay: 0.2 }}
-              className="relative"
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.4 }}
+              className="relative w-full max-w-5xl"
             >
-              <div className="absolute -inset-4 bg-emerald-500/10 blur-3xl rounded-full" />
-              <div className="relative bg-slate-900 rounded-[2.5rem] p-4 shadow-2xl border border-slate-800">
+              <div className="absolute -inset-10 bg-emerald-500/10 blur-[100px] rounded-full" />
+              <div className="relative bg-slate-900 rounded-[3rem] p-4 shadow-2xl border border-slate-800">
                 <img 
-                  src="https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=1200&h=800&auto=format&fit=crop" 
+                  src="https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=2000&h=1000&auto=format&fit=crop" 
                   alt="Happy shopkeeper doing billing" 
-                  className="rounded-[1.5rem] shadow-lg"
+                  className="rounded-[2rem] shadow-lg w-full object-cover aspect-[21/9]"
                   referrerPolicy="no-referrer"
                 />
-                <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-3xl shadow-xl border border-slate-100 hidden md:block">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center">
-                      <TrendingUp className="w-6 h-6 text-emerald-600" />
+                <div className="absolute -bottom-10 -right-10 bg-white p-8 rounded-[2.5rem] shadow-2xl border border-slate-100 hidden lg:block">
+                  <div className="flex items-center gap-6 mb-6">
+                    <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center">
+                      <TrendingUp className="w-8 h-8 text-emerald-600" />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-slate-400 uppercase">Monthly Sales</p>
-                      <p className="text-xl font-bold text-slate-900">₹4,52,000</p>
+                      <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">Monthly Sales</p>
+                      <p className="text-3xl font-black text-slate-900">₹4,52,000</p>
                     </div>
                   </div>
-                  <div className="w-48 h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="w-64 h-3 bg-slate-100 rounded-full overflow-hidden">
                     <motion.div 
                       initial={{ width: 0 }}
                       animate={{ width: "75%" }}
-                      transition={{ duration: 2, delay: 1 }}
+                      transition={{ duration: 2, delay: 1.5 }}
                       className="h-full bg-emerald-500" 
                     />
                   </div>
@@ -289,7 +302,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-20">
             <h2 className="text-sm font-bold text-emerald-400 uppercase tracking-[0.2em] mb-4">Pricing Plans</h2>
-            <h3 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
+            <h3 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight text-[#f2800f]">
               <ParticleText text="Simple, transparent pricing" />
             </h3>
             <p className="text-lg text-slate-400">
