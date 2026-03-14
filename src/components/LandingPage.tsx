@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { PolicyModal } from './PolicyModal';
+import { CubeBackground } from './CubeBackground';
+import { ParticleText } from './ParticleText';
+import { GlowCard } from './GlowCard';
 import { 
   ArrowUpRight, 
   ShieldCheck, 
@@ -85,6 +88,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
           <div className="hidden md:flex items-center gap-8">
             <a href="#benefits" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Benefits</a>
             <a href="#features" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Features</a>
+            <a href="#pricing" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Pricing</a>
             <button 
               onClick={onGetStarted}
               className="bg-slate-900 text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-slate-800 transition-all active:scale-95"
@@ -109,7 +113,11 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Trusted by 500+ Jharkhand Shops</span>
               </div>
               <h1 className="text-5xl md:text-7xl font-bold leading-[1.1] mb-6 tracking-tight">
-                Modern Billing for <span className="text-emerald-600">Your</span> Businesses
+                <ParticleText text="Modern Billing for " />
+                <span className="text-emerald-600">
+                  <ParticleText text="Your" />
+                </span>
+                <ParticleText text=" Businesses" />
               </h1>
               <p className="text-xl text-slate-600 mb-10 leading-relaxed max-w-xl">
                 The most powerful GST billing and inventory management system designed specifically for kirana stores, retail shops, and small businesses.
@@ -187,11 +195,14 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* Benefits Section */}
-      <section id="benefits" className="py-24 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="benefits" className="py-24 bg-slate-50 relative overflow-hidden">
+        <CubeBackground />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-20">
             <h2 className="text-sm font-bold text-emerald-600 uppercase tracking-[0.2em] mb-4">Why Choose Us</h2>
-            <h3 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">Everything you need to run your shop efficiently</h3>
+            <h3 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
+              <ParticleText text="Everything you need to run your shop efficiently" />
+            </h3>
             <p className="text-lg text-slate-600">
               Johar Billing is built to solve the real-world problems of small retailers in Jharkhand.
             </p>
@@ -205,15 +216,18 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all group"
               >
-                <div className={`w-14 h-14 ${benefit.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
-                  {benefit.icon}
-                </div>
-                <h4 className="text-xl font-bold mb-4">{benefit.title}</h4>
-                <p className="text-slate-600 leading-relaxed">
-                  {benefit.description}
-                </p>
+                <GlowCard className="h-full">
+                  <div className="bg-white p-8 h-full group-hover:bg-white/90 transition-colors">
+                    <div className={`w-14 h-14 ${benefit.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                      {benefit.icon}
+                    </div>
+                    <h4 className="text-xl font-bold mb-4">{benefit.title}</h4>
+                    <p className="text-slate-600 leading-relaxed">
+                      {benefit.description}
+                    </p>
+                  </div>
+                </GlowCard>
               </motion.div>
             ))}
           </div>
@@ -221,65 +235,148 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row items-center gap-16">
-            <div className="lg:w-1/2">
-              <h2 className="text-sm font-bold text-emerald-600 uppercase tracking-[0.2em] mb-4">Advanced Features</h2>
-              <h3 className="text-4xl font-bold mb-8 tracking-tight">Powerful tools for your business growth</h3>
-              <div className="space-y-6">
-                {[
-                  { title: "Smart Invoicing", desc: "One-click invoice generation with automatic GST breakdown." },
-                  { title: "Expense Tracking", desc: "Monitor your spending and identify cost-saving opportunities." },
-                  { title: "Customer Portal", desc: "Give your customers a professional experience with digital receipts." }
-                ].map((feature, i) => (
-                  <div key={i} className="flex gap-4">
-                    <div className="mt-1">
-                      <CheckCircle2 className="w-6 h-6 text-emerald-500" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-lg mb-1">{feature.title}</h4>
-                      <p className="text-slate-600">{feature.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <button 
-                onClick={() => document.getElementById('benefits')?.scrollIntoView({ behavior: 'smooth' })}
-                className="mt-10 inline-flex items-center gap-2 text-emerald-600 font-bold hover:gap-3 transition-all"
+      <section id="features" className="py-24 relative overflow-hidden">
+        <CubeBackground />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="text-sm font-bold text-emerald-600 uppercase tracking-[0.2em] mb-4">Advanced Features</h2>
+            <h3 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
+              <ParticleText text="Powerful tools for your business growth" />
+            </h3>
+            <p className="text-lg text-slate-600">
+              Everything you need to manage your shop, from billing to inventory, all in one place.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              { title: "Smart Invoicing", desc: "One-click invoice generation with automatic GST breakdown.", icon: <Zap className="w-6 h-6 text-yellow-500" /> },
+              { title: "Expense Tracking", desc: "Monitor your spending and identify cost-saving opportunities.", icon: <TrendingUp className="w-6 h-6 text-emerald-500" /> },
+              { title: "Customer Portal", desc: "Give your customers a professional experience with digital receipts.", icon: <Users className="w-6 h-6 text-blue-500" /> },
+              { title: "Mobile App", desc: "Manage your business on the go with our dedicated mobile app.", icon: <Smartphone className="w-6 h-6 text-indigo-500" /> },
+              { title: "Inventory Alerts", desc: "Get notified when stock is low so you never run out of items.", icon: <Package className="w-6 h-6 text-orange-500" /> },
+              { title: "Secure Backup", desc: "Your data is backed up daily with bank-grade encryption.", icon: <ShieldCheck className="w-6 h-6 text-emerald-500" /> }
+            ].map((feature, i) => (
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
               >
-                Explore All Benefits <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="lg:w-1/2 relative">
-              <div className="absolute -inset-10 bg-emerald-100/50 blur-3xl rounded-full" />
-              <div className="relative grid grid-cols-2 gap-4">
-                <div className="space-y-4 pt-12">
-                  <div className="bg-white p-6 rounded-3xl shadow-xl border border-slate-100">
-                    <Zap className="w-8 h-8 text-yellow-500 mb-4" />
-                    <p className="font-bold">Fast Setup</p>
-                    <p className="text-xs text-slate-500">Get started in under 2 minutes</p>
+                <GlowCard className="h-full">
+                  <div className="bg-slate-50 p-8 h-full group-hover:bg-white transition-all">
+                    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform">
+                      {feature.icon}
+                    </div>
+                    <h4 className="font-bold text-xl mb-3">{feature.title}</h4>
+                    <p className="text-slate-600 leading-relaxed">{feature.desc}</p>
                   </div>
-                  <div className="bg-white p-6 rounded-3xl shadow-xl border border-slate-100">
-                    <ShieldCheck className="w-8 h-8 text-emerald-500 mb-4" />
-                    <p className="font-bold">Secure Data</p>
-                    <p className="text-xs text-slate-500">Bank-grade encryption</p>
+                </GlowCard>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" className="py-24 bg-slate-900 text-white overflow-hidden relative">
+        <CubeBackground />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-emerald-500/10 blur-[120px] -ml-48 -mt-48" />
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-500/10 blur-[120px] -mr-48 -mb-48" />
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center max-w-3xl mx-auto mb-20">
+            <h2 className="text-sm font-bold text-emerald-400 uppercase tracking-[0.2em] mb-4">Pricing Plans</h2>
+            <h3 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
+              <ParticleText text="Simple, transparent pricing" />
+            </h3>
+            <p className="text-lg text-slate-400">
+              Choose the plan that's right for your business. No hidden fees.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                name: "Starter",
+                price: "0",
+                desc: "Perfect for new shops starting their digital journey.",
+                features: ["7-Day Free Trial", "Up to 100 Invoices/mo", "Basic Inventory", "1 Staff User"],
+                button: "Start Free Trial",
+                popular: false
+              },
+              {
+                name: "Standard",
+                price: "499",
+                desc: "The most popular choice for growing retail businesses.",
+                features: ["Up to 1,000 Invoices/mo", "Full Inventory Management", "Up to 3 Staff Users", "GST Reports & Filing Ready", "WhatsApp Support", "Mobile App Access"],
+                button: "Get Started",
+                popular: true
+              },
+              {
+                name: "Enterprise",
+                price: "999",
+                desc: "Advanced features for large shops and multiple branches.",
+                features: ["Everything in Standard", "Multi-Shop Support (3 Tenants)", "Up to 10 Staff Users", "Advanced Sales Analytics", "Dedicated Account Manager", "Custom Branding"],
+                button: "Contact Sales",
+                popular: false
+              }
+            ].map((plan, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className={plan.popular ? 'scale-105 z-20' : ''}
+              >
+                <GlowCard className="h-full">
+                  <div className={`p-8 md:p-10 h-full transition-all flex flex-col ${
+                    plan.popular 
+                      ? 'bg-white text-slate-900' 
+                      : 'bg-slate-800 text-white hover:bg-slate-800/80'
+                  }`}>
+                    {plan.popular && (
+                      <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-emerald-500 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest z-30">
+                        Most Popular
+                      </div>
+                    )}
+                    
+                    <div className="mb-8">
+                      <h4 className={`text-2xl font-bold mb-2 ${plan.popular ? 'text-slate-900' : 'text-white'}`}>{plan.name}</h4>
+                      <p className={`text-sm ${plan.popular ? 'text-slate-500' : 'text-slate-400'}`}>{plan.desc}</p>
+                    </div>
+
+                    <div className="mb-8 flex items-baseline gap-1">
+                      <span className={`text-5xl font-black ${plan.popular ? 'text-slate-900' : 'text-white'}`}>₹{plan.price}</span>
+                      <span className={plan.popular ? 'text-slate-500' : 'text-slate-400'}>/month</span>
+                    </div>
+
+                    <ul className="space-y-4 mb-10 flex-1">
+                      {plan.features.map((feature, j) => (
+                        <li key={j} className="flex items-center gap-3 text-sm">
+                          <CheckCircle2 className={`w-5 h-5 shrink-0 ${plan.popular ? 'text-emerald-500' : 'text-emerald-400'}`} />
+                          <span className={plan.popular ? 'text-slate-600' : 'text-slate-300'}>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <button
+                      onClick={onGetStarted}
+                      className={`w-full py-4 rounded-2xl font-bold transition-all active:scale-95 ${
+                        plan.popular
+                          ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-600/20'
+                          : 'bg-white text-slate-900 hover:bg-slate-100'
+                      }`}
+                    >
+                      {plan.button}
+                    </button>
                   </div>
-                </div>
-                <div className="space-y-4">
-                  <div className="bg-white p-6 rounded-3xl shadow-xl border border-slate-100">
-                    <Smartphone className="w-8 h-8 text-blue-500 mb-4" />
-                    <p className="font-bold">Mobile App</p>
-                    <p className="text-xs text-slate-500">Manage on the go</p>
-                  </div>
-                  <div className="bg-white p-6 rounded-3xl shadow-xl border border-slate-100">
-                    <Users className="w-8 h-8 text-purple-500 mb-4" />
-                    <p className="font-bold">Multi-User</p>
-                    <p className="text-xs text-slate-500">Collaborate with staff</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+                </GlowCard>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
@@ -318,24 +415,27 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all group"
               >
-                <div className="h-48 overflow-hidden">
-                  <img 
-                    src={study.image} 
-                    alt={study.title} 
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    referrerPolicy="no-referrer"
-                  />
-                </div>
-                <div className="p-6">
-                  <h4 className="text-xl font-bold mb-2">{study.title}</h4>
-                  <p className="text-emerald-600 font-bold text-sm mb-4">{study.metric}</p>
-                  <p className="text-slate-600 text-sm leading-relaxed">{study.desc}</p>
-                  <button className="mt-4 text-emerald-600 text-sm font-bold flex items-center gap-1 hover:gap-2 transition-all">
-                    Read Case Study <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
+                <GlowCard className="h-full">
+                  <div className="bg-white h-full overflow-hidden group-hover:bg-white/95 transition-all">
+                    <div className="h-48 overflow-hidden">
+                      <img 
+                        src={study.image} 
+                        alt={study.title} 
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                    <div className="p-6">
+                      <h4 className="text-xl font-bold mb-2">{study.title}</h4>
+                      <p className="text-emerald-600 font-bold text-sm mb-4">{study.metric}</p>
+                      <p className="text-slate-600 text-sm leading-relaxed">{study.desc}</p>
+                      <button className="mt-4 text-emerald-600 text-sm font-bold flex items-center gap-1 hover:gap-2 transition-all">
+                        Read Case Study <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </GlowCard>
               </motion.div>
             ))}
           </div>
@@ -376,29 +476,32 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="bg-white p-8 rounded-3xl shadow-lg border border-slate-100 relative"
               >
-                <div className="absolute top-8 right-8 text-emerald-100">
-                  <MessageSquare className="w-12 h-12" />
-                </div>
-                <div className="flex gap-1 mb-6">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-                  ))}
-                </div>
-                <p className="text-slate-600 mb-8 relative z-10">"{testimonial.quote}"</p>
-                <div className="flex items-center gap-4">
-                  <img 
-                    src={testimonial.image} 
-                    alt={testimonial.author} 
-                    className="w-12 h-12 rounded-full border-2 border-emerald-100"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div>
-                    <p className="font-bold text-slate-900">{testimonial.author}</p>
-                    <p className="text-xs text-slate-500">{testimonial.role}</p>
+                <GlowCard className="h-full">
+                  <div className="bg-white p-8 h-full relative group-hover:bg-white/95 transition-all">
+                    <div className="absolute top-8 right-8 text-emerald-100">
+                      <MessageSquare className="w-12 h-12" />
+                    </div>
+                    <div className="flex gap-1 mb-6">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star key={star} className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                      ))}
+                    </div>
+                    <p className="text-slate-600 mb-8 relative z-10">"{testimonial.quote}"</p>
+                    <div className="flex items-center gap-4">
+                      <img 
+                        src={testimonial.image} 
+                        alt={testimonial.author} 
+                        className="w-12 h-12 rounded-full border-2 border-emerald-100"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div>
+                        <p className="font-bold text-slate-900">{testimonial.author}</p>
+                        <p className="text-xs text-slate-500">{testimonial.role}</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </GlowCard>
               </motion.div>
             ))}
           </div>
@@ -426,12 +529,15 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
               <motion.div 
                 key={i}
                 whileHover={{ scale: 1.05 }}
-                className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700 flex flex-col items-center justify-center gap-4 text-center hover:bg-slate-800 transition-colors"
               >
-                <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-400">
-                  {industry.icon}
-                </div>
-                <p className="font-bold text-lg">{industry.name}</p>
+                <GlowCard className="h-full">
+                  <div className="bg-slate-800 p-6 h-full flex flex-col items-center justify-center gap-4 text-center hover:bg-slate-700 transition-colors">
+                    <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-400">
+                      {industry.icon}
+                    </div>
+                    <p className="font-bold text-lg">{industry.name}</p>
+                  </div>
+                </GlowCard>
               </motion.div>
             ))}
           </div>
@@ -564,7 +670,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 Ready to transform your business?
               </h2>
               <p className="text-xl text-slate-400 mb-12 max-w-2xl mx-auto">
-                Join thousands of successful shop owners in Jharkhand. Start your 14-day free trial today. No credit card required.
+                Join thousands of successful shop owners in Jharkhand. Start your 7-day free trial today. No credit card required.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
                 <button 
@@ -637,7 +743,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
       >
         <p>We want you to be completely satisfied with Johar Billing. If you are not satisfied with our service, please review our refund policy below.</p>
         <h3 className="text-lg font-bold text-slate-900 mt-4">Free Trial</h3>
-        <p>We offer a 14-day free trial for all new users. You can cancel anytime during the trial period without being charged.</p>
+        <p>We offer a 7-day free trial for all new users. You can cancel anytime during the trial period without being charged.</p>
         <h3 className="text-lg font-bold text-slate-900 mt-4">Subscription Refunds</h3>
         <p>For paid subscriptions, we generally do not offer refunds for partial months or years of service. However, if you believe you have been charged in error or have a special circumstance, please contact our support team.</p>
         <h3 className="text-lg font-bold text-slate-900 mt-4">Cancellation</h3>
