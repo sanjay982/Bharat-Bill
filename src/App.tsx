@@ -339,7 +339,7 @@ export default function App() {
           date: inv.date,
           dueDate: inv.due_date,
           contactId: inv.contact_id,
-          tenantId: tenantId,
+          tenantId: '1',
           subtotal: Number(inv.subtotal),
           totalGst: Number(inv.total_gst),
           totalAmount: Number(inv.total_amount),
@@ -710,10 +710,45 @@ export default function App() {
     }
   };
 
-  const deleteInvoice = (id: string) => {
+  const deleteInvoice = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this invoice?')) {
-      setInvoices(invoices.filter(inv => inv.id !== id));
-      showToast('Invoice deleted successfully');
+      try {
+        const { error } = await supabase.from('invoices').delete().eq('id', id);
+        if (error) throw error;
+        setInvoices(invoices.filter(inv => inv.id !== id));
+        showToast('Invoice deleted successfully');
+      } catch (err: any) {
+        console.error('Error deleting invoice:', err);
+        showToast(err.message || 'Failed to delete invoice', 'error');
+      }
+    }
+  };
+
+  const deleteProduct = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this product?')) {
+      try {
+        const { error } = await supabase.from('products').delete().eq('id', id);
+        if (error) throw error;
+        setProducts(products.filter(p => p.id !== id));
+        showToast('Product deleted successfully');
+      } catch (err: any) {
+        console.error('Error deleting product:', err);
+        showToast(err.message || 'Failed to delete product', 'error');
+      }
+    }
+  };
+
+  const deleteContact = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this contact?')) {
+      try {
+        const { error } = await supabase.from('contacts').delete().eq('id', id);
+        if (error) throw error;
+        setContacts(contacts.filter(c => c.id !== id));
+        showToast('Contact deleted successfully');
+      } catch (err: any) {
+        console.error('Error deleting contact:', err);
+        showToast(err.message || 'Failed to delete contact', 'error');
+      }
     }
   };
 
@@ -814,7 +849,12 @@ export default function App() {
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
-                    <button className="p-2 text-slate-400 hover:text-danger transition-colors"><Trash2 className="w-4 h-4" /></button>
+                    <button 
+                      onClick={() => deleteContact(customer.id)}
+                      className="p-2 text-slate-400 hover:text-danger transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -1758,7 +1798,12 @@ export default function App() {
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
-                    <button className="p-2 text-slate-400 hover:text-danger transition-colors"><Trash2 className="w-4 h-4" /></button>
+                    <button 
+                      onClick={() => deleteProduct(product.id)}
+                      className="p-2 text-slate-400 hover:text-danger transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -2819,8 +2864,7 @@ export default function App() {
                     type: invoice.type,
                     original_invoice_id: invoice.originalInvoiceId,
                     invoice_type: invoice.invoiceType,
-                    user_id: user.id,
-                    tenant_id: activeTenantId
+                    user_id: user.id
                   }])
                   .select();
 
@@ -2845,8 +2889,7 @@ export default function App() {
                   price: item.price,
                   gst_rate: item.gstRate,
                   amount: item.amount,
-                  gst_amount: item.gstAmount,
-                  tenant_id: activeTenantId
+                  gst_amount: item.gstAmount
                 }));
 
                 const { error: itemsError } = await supabase
@@ -2971,8 +3014,7 @@ export default function App() {
                       stock: product.stock,
                       unit: product.unit,
                       gst_rate: product.gstRate,
-                      user_id: user.id,
-                      tenant_id: activeTenantId
+                      user_id: user.id
                     }])
                     .select();
                   if (error) throw error;
@@ -3014,8 +3056,7 @@ export default function App() {
                 business: feedback.business,
                 mobile: feedback.mobile,
                 comments: feedback.comments,
-                user_id: user?.id,
-                tenant_id: activeTenantId
+                user_id: user?.id
               }]);
 
               // 2. Send Email via our new API
@@ -3043,7 +3084,6 @@ export default function App() {
           editingUser={editingUser}
           isAdmin={isAdmin}
           tenants={tenants}
-          activeTenantId={activeTenantId}
           onSave={async (userData, password) => {
             try {
               if (editingUser) {
@@ -3062,7 +3102,7 @@ export default function App() {
                 showToast('User updated successfully');
               } else {
                 // Check plan limits
-                const targetTenantId = isAdmin ? (userData.tenantId || activeTenantId) : activeTenantId;
+                const targetTenantId = userData.tenantId || activeTenantId;
                 const currentTenant = tenants.find(t => t.id === targetTenantId);
                 const planLimit = currentTenant ? PLAN_LIMITS[currentTenant.plan as keyof typeof PLAN_LIMITS] : 3;
                 
@@ -3144,7 +3184,6 @@ export default function App() {
           isOpen={isNewCustomerModalOpen}
           onClose={() => setIsNewCustomerModalOpen(false)}
           editingCustomer={editingCustomer}
-          activeTenantId={activeTenantId}
           onSave={async (customer) => {
             try {
               if (user) {
@@ -3173,8 +3212,7 @@ export default function App() {
                       address: customer.address,
                       type: customer.type,
                       customer_type: customer.customerType,
-                      user_id: user.id,
-                      tenant_id: activeTenantId
+                      user_id: user.id
                     }])
                     .select();
                   if (error) throw error;
@@ -3486,12 +3524,11 @@ function NewTenantModal({ isOpen, onClose, editingTenant, onSave }: {
   );
 }
 
-function NewCustomerModal({ isOpen, onClose, editingCustomer, onSave, activeTenantId }: { 
+function NewCustomerModal({ isOpen, onClose, editingCustomer, onSave }: { 
   isOpen: boolean, 
   onClose: () => void, 
   editingCustomer: Contact | null,
-  onSave: (customer: Contact) => void,
-  activeTenantId: string
+  onSave: (customer: Contact) => void 
 }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -3533,7 +3570,7 @@ function NewCustomerModal({ isOpen, onClose, editingCustomer, onSave, activeTena
       address,
       type: 'customer',
       customerType,
-      tenantId: activeTenantId
+      tenantId: '1'
     };
 
     onSave(customer);
