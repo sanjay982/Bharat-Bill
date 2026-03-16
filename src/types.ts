@@ -103,6 +103,7 @@ export interface LandingPageConfig {
 export interface LoginAdConfig {
   enabled: boolean;
   imageUrl: string;
+  videoUrl?: string;
   youtubeUrl?: string;
   link?: string;
   title?: string;

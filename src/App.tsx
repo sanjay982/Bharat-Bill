@@ -68,6 +68,7 @@ import { format } from 'date-fns';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import 'jspdf-autotable';
+import { createClient } from '@supabase/supabase-js';
 import { Product, Contact, Invoice, Quotation, View, InvoiceItem, Tenant, AppConfig, AppNotification, WorkspaceUser } from './types';
 import { cn, formatCurrency, calculateGST } from './utils';
 import { supabase } from './lib/supabase';
@@ -188,7 +189,7 @@ export default function App() {
   const [quotations, setQuotations] = useState<Quotation[]>(MOCK_QUOTATIONS);
   const [tenants, setTenants] = useState<Tenant[]>(MOCK_TENANTS);
   const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
-  const [workspaceUsers, setWorkspaceUsers] = useState<WorkspaceUser[]>(MOCK_WORKSPACE_USERS);
+  const [workspaceUsers, setWorkspaceUsers] = useState<WorkspaceUser[]>([]);
 
   const chartData = useMemo(() => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -231,6 +232,7 @@ export default function App() {
   const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false);
   const [isNewTenantModalOpen, setIsNewTenantModalOpen] = useState(false);
   const [isNewUserModalOpen, setIsNewUserModalOpen] = useState(false);
+  const [userCreationLoading, setUserCreationLoading] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [tenantSearchTerm, setTenantSearchTerm] = useState('');
@@ -252,7 +254,9 @@ export default function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchData(session.user.id);
+        const tenantId = session.user.user_metadata?.tenant_id || '1';
+        setActiveTenantId(tenantId);
+        fetchData(session.user.id, tenantId);
       }
       setAuthLoading(false);
     });
@@ -260,7 +264,9 @@ export default function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchData(session.user.id);
+        const tenantId = session.user.user_metadata?.tenant_id || '1';
+        setActiveTenantId(tenantId);
+        fetchData(session.user.id, tenantId);
       }
       if (event === 'PASSWORD_RECOVERY') {
         setIsRecoveryMode(true);
@@ -270,7 +276,7 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchData = async (userId: string) => {
+  const fetchData = async (userId: string, tenantId: string = activeTenantId) => {
     try {
       // Fetch Products
       const { data: productsData } = await supabase
@@ -346,6 +352,23 @@ export default function App() {
           })) || []
         })));
       }
+
+      // Fetch Workspace Users
+      const { data: usersData } = await supabase
+        .from('workspace_users')
+        .select('*')
+        .eq('tenant_id', tenantId);
+      
+      if (usersData) {
+        setWorkspaceUsers(usersData.map(u => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          status: u.status,
+          tenantId: u.tenant_id
+        })));
+      }
     } catch (err) {
       console.error('Error fetching data:', err);
     }
@@ -408,27 +431,42 @@ export default function App() {
     }
   };
 
-  const [appConfig, setAppConfig] = useState<AppConfig>({
-    primaryColor: '#10b981',
-    logoUrl: '',
-    appName: 'Johar Billing',
-    currency: 'INR',
-    landingPage: {
-      heroTitle: 'Modern Billing for Modern India',
-      heroSubtitle: 'The most powerful GST billing and inventory management system for small and medium businesses.',
-      features: [
-        { title: 'GST Ready', description: 'Generate GST compliant invoices in seconds.', icon: 'ShieldCheck' },
-        { title: 'Inventory', description: 'Real-time stock tracking and alerts.', icon: 'Package' },
-        { title: 'Multi-tenant', description: 'Manage multiple businesses from one dashboard.', icon: 'Building2' }
-      ]
-    },
-    loginAd: {
-      enabled: true,
-      imageUrl: 'https://picsum.photos/seed/billing/800/600',
-      title: 'Upgrade to Pro Today!',
-      description: 'Get unlimited invoices and advanced reports.'
+  const [appConfig, setAppConfig] = useState<AppConfig>(() => {
+    const saved = localStorage.getItem('app_config');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse app_config', e);
+      }
     }
+    return {
+      primaryColor: '#10b981',
+      logoUrl: '',
+      appName: 'Johar Billing',
+      currency: 'INR',
+      landingPage: {
+        heroTitle: 'Modern Billing for Modern India',
+        heroSubtitle: 'The most powerful GST billing and inventory management system for small and medium businesses.',
+        features: [
+          { title: 'GST Ready', description: 'Generate GST compliant invoices in seconds.', icon: 'ShieldCheck' },
+          { title: 'Inventory', description: 'Real-time stock tracking and alerts.', icon: 'Package' },
+          { title: 'Multi-tenant', description: 'Manage multiple businesses from one dashboard.', icon: 'Building2' }
+        ]
+      },
+      loginAd: {
+        enabled: true,
+        imageUrl: 'https://picsum.photos/seed/billing/800/600',
+        videoUrl: '',
+        title: 'Upgrade to Pro Today!',
+        description: 'Get unlimited invoices and advanced reports.'
+      }
+    };
   });
+
+  useEffect(() => {
+    localStorage.setItem('app_config', JSON.stringify(appConfig));
+  }, [appConfig]);
   const [businessProfile, setBusinessProfile] = useState({
     name: 'Johar Billing Solutions',
     gstin: '27ABCDE1234F1Z5',
@@ -846,10 +884,22 @@ export default function App() {
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button 
-                      onClick={() => {
+                      onClick={async () => {
                         if (window.confirm(`Are you sure you want to delete ${workspaceUser.name}?`)) {
-                          setWorkspaceUsers(workspaceUsers.filter(u => u.id !== workspaceUser.id));
-                          showToast('User deleted successfully');
+                          try {
+                            const { error } = await supabase
+                              .from('workspace_users')
+                              .delete()
+                              .eq('id', workspaceUser.id);
+                            
+                            if (error) throw error;
+
+                            setWorkspaceUsers(workspaceUsers.filter(u => u.id !== workspaceUser.id));
+                            showToast('User deleted successfully');
+                          } catch (err: any) {
+                            console.error('Error deleting user:', err);
+                            showToast(err.message || 'Failed to delete user', 'error');
+                          }
                         }
                       }}
                       className="p-2 text-slate-400 hover:text-rose-600 transition-colors"
@@ -1280,6 +1330,46 @@ export default function App() {
                           setAppConfig({
                             ...appConfig,
                             loginAd: { ...appConfig.loginAd!, imageUrl: event.target?.result as string }
+                          });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="w-full text-[10px] text-slate-500 file:mr-4 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-[10px] file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase">Ad Video (.mp4 Upload or URL)</label>
+              <div className="flex items-center gap-4">
+                {appConfig.loginAd?.videoUrl && (
+                  <div className="w-12 h-20 bg-slate-900 rounded-lg overflow-hidden border border-slate-200 flex items-center justify-center">
+                    <video src={appConfig.loginAd.videoUrl} className="w-full h-full object-cover" muted />
+                  </div>
+                )}
+                <div className="flex-1 space-y-2">
+                  <input 
+                    type="text" 
+                    value={appConfig.loginAd?.videoUrl || ''}
+                    onChange={(e) => setAppConfig({
+                      ...appConfig, 
+                      loginAd: { ...appConfig.loginAd!, videoUrl: e.target.value }
+                    })}
+                    placeholder="https://example.com/video.mp4"
+                    className="w-full bg-slate-50 border-none rounded-xl py-2 px-4 focus:ring-2 focus:ring-emerald-500/20 text-xs font-medium"
+                  />
+                  <input 
+                    type="file" 
+                    accept="video/mp4"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          setAppConfig({
+                            ...appConfig,
+                            loginAd: { ...appConfig.loginAd!, videoUrl: event.target?.result as string }
                           });
                         };
                         reader.readAsDataURL(file);
@@ -1935,7 +2025,10 @@ export default function App() {
                     </div>
                     <ChevronRight className="w-4 h-4 text-slate-300" />
                   </button>
-                  <button className="w-full flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors group">
+                  <button 
+                    onClick={() => setCurrentView('users')}
+                    className="w-full flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors group"
+                  >
                     <div className="flex items-center gap-3">
                       <Users className="w-5 h-5 text-slate-400 group-hover:text-primary" />
                       <span className="text-sm font-medium text-slate-700">Manage Team</span>
@@ -2694,15 +2787,50 @@ export default function App() {
           isOpen={isNewTenantModalOpen}
           onClose={() => setIsNewTenantModalOpen(false)}
           editingTenant={editingTenant}
-          onSave={(tenant, password) => {
+          onSave={async (tenant, password) => {
             if (editingTenant) {
               setTenants(tenants.map(t => t.id === tenant.id ? tenant : t));
               showToast('Tenant updated successfully');
             } else {
-              setTenants([tenant, ...tenants]);
-              showToast('New tenant created successfully');
               if (password) {
-                alert(`User created for ${tenant.name}\nEmail: ${tenant.email}\nPassword: ${password}\n\n(In a real app, this would be sent via email)`);
+                setUserCreationLoading(true);
+                try {
+                  const adminClient = createClient(
+                    import.meta.env.VITE_SUPABASE_URL || 'https://lliahczkndxudycvypkz.supabase.co',
+                    import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxsaWFoY3prbmR4dWR5Y3Z5cGt6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MTMzMjEsImV4cCI6MjA4ODE4OTMyMX0.8uAavq7sCk34ElXqL5rS4wWSP5OVZmlttJrp_RRxBZo',
+                    { auth: { persistSession: false } }
+                  );
+                  
+                  const { data, error: signUpError } = await adminClient.auth.signUp({
+                    email: tenant.email,
+                    password: password,
+                    options: {
+                      data: {
+                        full_name: tenant.name,
+                        role: 'user',
+                        plan: tenant.plan
+                      }
+                    }
+                  });
+
+                  if (signUpError) throw signUpError;
+                  
+                  if (data.user) {
+                    const newTenant = { ...tenant, id: data.user.id };
+                    setTenants([newTenant, ...tenants]);
+                    showToast('New tenant created successfully in Supabase Auth');
+                  }
+                } catch (err: any) {
+                  console.error('Error creating tenant user:', err);
+                  showToast(err.message || 'Failed to create tenant user in Supabase', 'error');
+                  // Still add to local list for UI feedback if desired, or skip
+                  setTenants([tenant, ...tenants]);
+                } finally {
+                  setUserCreationLoading(false);
+                }
+              } else {
+                setTenants([tenant, ...tenants]);
+                showToast('New tenant created successfully (Local only)');
               }
             }
             setIsNewTenantModalOpen(false);
@@ -2808,13 +2936,78 @@ export default function App() {
           isOpen={isNewUserModalOpen}
           onClose={() => setIsNewUserModalOpen(false)}
           editingUser={editingUser}
-          onSave={(user) => {
-            if (editingUser) {
-              setWorkspaceUsers(workspaceUsers.map(u => u.id === editingUser.id ? { ...u, ...user } : u));
-              showToast('User updated successfully');
-            } else {
-              setWorkspaceUsers([...workspaceUsers, { ...user, id: Math.random().toString(36).substr(2, 9), tenantId: activeTenantId } as WorkspaceUser]);
-              showToast('User created successfully');
+          onSave={async (user, password) => {
+            try {
+              if (editingUser) {
+                const { error } = await supabase
+                  .from('workspace_users')
+                  .update({
+                    name: user.name,
+                    role: user.role,
+                    status: user.status
+                  })
+                  .eq('id', editingUser.id);
+                
+                if (error) throw error;
+
+                setWorkspaceUsers(workspaceUsers.map(u => u.id === editingUser.id ? { ...u, ...user } : u));
+                showToast('User updated successfully');
+              } else {
+                if (password) {
+                  setUserCreationLoading(true);
+                  try {
+                    const adminClient = createClient(
+                      import.meta.env.VITE_SUPABASE_URL || 'https://lliahczkndxudycvypkz.supabase.co',
+                      import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxsaWFoY3prbmR4dWR5Y3Z5cGt6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MTMzMjEsImV4cCI6MjA4ODE4OTMyMX0.8uAavq7sCk34ElXqL5rS4wWSP5OVZmlttJrp_RRxBZo',
+                      { auth: { persistSession: false } }
+                    );
+                    
+                    const { data, error: signUpError } = await adminClient.auth.signUp({
+                      email: user.email!,
+                      password: password,
+                      options: {
+                        data: {
+                          full_name: user.name,
+                          role: user.role,
+                          tenant_id: activeTenantId
+                        }
+                      }
+                    });
+
+                    if (signUpError) throw signUpError;
+
+                    if (data.user) {
+                      const newUser = { 
+                        id: data.user.id,
+                        name: user.name,
+                        email: user.email,
+                        role: user.role,
+                        status: user.status,
+                        tenant_id: activeTenantId
+                      };
+
+                      const { error: dbError } = await supabase
+                        .from('workspace_users')
+                        .insert([newUser]);
+                      
+                      if (dbError) throw dbError;
+
+                      setWorkspaceUsers([...workspaceUsers, { ...user, id: data.user.id, tenantId: activeTenantId } as WorkspaceUser]);
+                      showToast('User created successfully in Supabase Auth');
+                    }
+                  } catch (err: any) {
+                    console.error('Error creating user:', err);
+                    showToast(err.message || 'Failed to create user in Supabase', 'error');
+                  } finally {
+                    setUserCreationLoading(false);
+                  }
+                } else {
+                  showToast('Password is required for new users', 'error');
+                }
+              }
+            } catch (err: any) {
+              console.error('Error saving user:', err);
+              showToast(err.message || 'Failed to save user', 'error');
             }
             setIsNewUserModalOpen(false);
           }}
@@ -3599,7 +3792,7 @@ function NewUserModal({ isOpen, onClose, editingUser, onSave }: {
   isOpen: boolean; 
   onClose: () => void; 
   editingUser: WorkspaceUser | null;
-  onSave: (user: Partial<WorkspaceUser>) => void;
+  onSave: (user: Partial<WorkspaceUser>, password?: string) => void;
 }) {
   const [formData, setFormData] = useState<Partial<WorkspaceUser>>({
     name: '',
@@ -3607,10 +3800,12 @@ function NewUserModal({ isOpen, onClose, editingUser, onSave }: {
     role: 'staff',
     status: 'active'
   });
+  const [password, setPassword] = useState('');
 
   useEffect(() => {
     if (editingUser) {
       setFormData(editingUser);
+      setPassword('');
     } else {
       setFormData({
         name: '',
@@ -3618,6 +3813,7 @@ function NewUserModal({ isOpen, onClose, editingUser, onSave }: {
         role: 'staff',
         status: 'active'
       });
+      setPassword('');
     }
   }, [editingUser, isOpen]);
 
@@ -3633,7 +3829,7 @@ function NewUserModal({ isOpen, onClose, editingUser, onSave }: {
           </button>
         </div>
         
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
             <input
@@ -3655,6 +3851,19 @@ function NewUserModal({ isOpen, onClose, editingUser, onSave }: {
               placeholder="Enter user email"
             />
           </div>
+
+          {!editingUser && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
+                placeholder="Enter password"
+              />
+            </div>
+          )}
           
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
@@ -3690,7 +3899,7 @@ function NewUserModal({ isOpen, onClose, editingUser, onSave }: {
             Cancel
           </button>
           <button
-            onClick={() => onSave(formData)}
+            onClick={() => onSave(formData, password)}
             className="px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl transition-colors font-medium"
           >
             {editingUser ? 'Save Changes' : 'Create User'}

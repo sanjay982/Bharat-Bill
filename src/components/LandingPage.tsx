@@ -114,22 +114,26 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Trusted by 500+ Jharkhand Shops</span>
               </div>
               <h1 className="text-5xl md:text-8xl font-bold leading-[1.1] mb-8 tracking-tight">
-                <div className="flex flex-wrap justify-center gap-x-[0.3em]">
-                  <span className="whitespace-nowrap">
-                    <ParticleText text="Modern" />
-                  </span>
-                  <span className="whitespace-nowrap">
-                    <ParticleText text="Billing" />
-                  </span>
-                  <span className="whitespace-nowrap">
-                    <ParticleText text="for" />
-                  </span>
-                  <span className="text-emerald-600 whitespace-nowrap">
-                    <ParticleText text="Your" />
-                  </span>
-                  <span className="whitespace-nowrap">
-                    <ParticleText text="Businesses" />
-                  </span>
+                <div className="flex flex-col items-center">
+                  <div className="flex flex-wrap justify-center gap-x-[0.3em]">
+                    <span className="whitespace-nowrap">
+                      <ParticleText text="Modern" />
+                    </span>
+                    <span className="whitespace-nowrap">
+                      <ParticleText text="Billing" />
+                    </span>
+                    <span className="whitespace-nowrap">
+                      <ParticleText text="for" />
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-x-[0.3em]">
+                    <span className="text-emerald-600 whitespace-nowrap">
+                      <ParticleText text="Your" />
+                    </span>
+                    <span className="whitespace-nowrap">
+                      <ParticleText text="Businesses" />
+                    </span>
+                  </div>
                 </div>
               </h1>
               <p className="text-xl md:text-2xl text-slate-600 mb-12 leading-relaxed max-w-2xl mx-auto">

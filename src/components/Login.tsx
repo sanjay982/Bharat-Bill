@@ -125,7 +125,16 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
           <div className="hidden md:block md:w-1/2 relative overflow-hidden bg-slate-900">
             {adConfig.link ? (
               <a href={adConfig.link} target="_blank" rel="noopener noreferrer" className="block w-full h-full relative group">
-                {getYoutubeEmbedUrl(adConfig.youtubeUrl) ? (
+                {adConfig.videoUrl ? (
+                  <video 
+                    src={adConfig.videoUrl} 
+                    autoPlay 
+                    muted 
+                    loop 
+                    playsInline
+                    className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
+                  />
+                ) : getYoutubeEmbedUrl(adConfig.youtubeUrl) ? (
                   <iframe
                     src={getYoutubeEmbedUrl(adConfig.youtubeUrl)!}
                     className="absolute inset-0 w-[300%] h-[300%] -left-[100%] -top-[100%] object-cover opacity-60 pointer-events-none"
@@ -144,7 +153,16 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
               </a>
             ) : (
               <>
-                {getYoutubeEmbedUrl(adConfig.youtubeUrl) ? (
+                {adConfig.videoUrl ? (
+                  <video 
+                    src={adConfig.videoUrl} 
+                    autoPlay 
+                    muted 
+                    loop 
+                    playsInline
+                    className="absolute inset-0 w-full h-full object-cover opacity-60"
+                  />
+                ) : getYoutubeEmbedUrl(adConfig.youtubeUrl) ? (
                   <iframe
                     src={getYoutubeEmbedUrl(adConfig.youtubeUrl)!}
                     className="absolute inset-0 w-[300%] h-[300%] -left-[100%] -top-[100%] object-cover opacity-60 pointer-events-none"
