@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS products (
   unit TEXT,
   gst_rate INTEGER NOT NULL DEFAULT 0,
   user_id UUID REFERENCES auth.users(id),
+  tenant_id TEXT NOT NULL DEFAULT '1',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
@@ -29,6 +30,7 @@ CREATE TABLE IF NOT EXISTS contacts (
   type TEXT CHECK (type IN ('customer', 'vendor')),
   customer_type TEXT CHECK (customer_type IN ('b2b', 'b2c')),
   user_id UUID REFERENCES auth.users(id),
+  tenant_id TEXT NOT NULL DEFAULT '1',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
@@ -47,6 +49,7 @@ CREATE TABLE IF NOT EXISTS invoices (
   type TEXT CHECK (type IN ('sale', 'purchase')),
   invoice_type TEXT CHECK (invoice_type IN ('b2b', 'b2c')),
   user_id UUID REFERENCES auth.users(id),
+  tenant_id TEXT NOT NULL DEFAULT '1',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
@@ -62,6 +65,7 @@ CREATE TABLE IF NOT EXISTS invoice_items (
   gst_rate INTEGER NOT NULL DEFAULT 0,
   amount DECIMAL(12, 2) NOT NULL DEFAULT 0,
   gst_amount DECIMAL(12, 2) NOT NULL DEFAULT 0,
+  tenant_id TEXT NOT NULL DEFAULT '1',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
@@ -73,8 +77,16 @@ CREATE TABLE IF NOT EXISTS feedback (
   mobile TEXT NOT NULL,
   comments TEXT,
   user_id UUID REFERENCES auth.users(id),
+  tenant_id TEXT NOT NULL DEFAULT '1',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
+
+-- Add tenant_id to existing tables if they were created before
+ALTER TABLE products ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT '1';
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT '1';
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT '1';
+ALTER TABLE invoice_items ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT '1';
+ALTER TABLE feedback ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT '1';
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
@@ -83,14 +95,35 @@ ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE invoice_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE feedback ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies to avoid conflicts
+DROP POLICY IF EXISTS "Users can manage their own products" ON products;
+DROP POLICY IF EXISTS "Users can manage their own contacts" ON contacts;
+DROP POLICY IF EXISTS "Users can manage their own invoices" ON invoices;
+DROP POLICY IF EXISTS "Users can manage their own invoice items" ON invoice_items;
+DROP POLICY IF EXISTS "Users can insert feedback" ON feedback;
+DROP POLICY IF EXISTS "Admins can view all feedback" ON feedback;
+
+DROP POLICY IF EXISTS "Users can manage their tenant's products" ON products;
+DROP POLICY IF EXISTS "Users can manage their tenant's contacts" ON contacts;
+DROP POLICY IF EXISTS "Users can manage their tenant's invoices" ON invoices;
+DROP POLICY IF EXISTS "Users can manage their tenant's invoice items" ON invoice_items;
+
 -- Create Policies
-CREATE POLICY "Users can manage their own products" ON products FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can manage their own contacts" ON contacts FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can manage their own invoices" ON invoices FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can manage their own invoice items" ON invoice_items FOR ALL USING (
-  EXISTS (SELECT 1 FROM invoices WHERE invoices.id = invoice_items.invoice_id AND invoices.user_id = auth.uid())
+CREATE POLICY "Users can manage their tenant's products" ON products FOR ALL USING (
+  (auth.jwt() -> 'user_metadata' ->> 'tenant_id') = tenant_id OR auth.jwt() ->> 'email' = 'sanju13july@gmail.com'
 );
-CREATE POLICY "Users can insert feedback" ON feedback FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can manage their tenant's contacts" ON contacts FOR ALL USING (
+  (auth.jwt() -> 'user_metadata' ->> 'tenant_id') = tenant_id OR auth.jwt() ->> 'email' = 'sanju13july@gmail.com'
+);
+CREATE POLICY "Users can manage their tenant's invoices" ON invoices FOR ALL USING (
+  (auth.jwt() -> 'user_metadata' ->> 'tenant_id') = tenant_id OR auth.jwt() ->> 'email' = 'sanju13july@gmail.com'
+);
+CREATE POLICY "Users can manage their tenant's invoice items" ON invoice_items FOR ALL USING (
+  (auth.jwt() -> 'user_metadata' ->> 'tenant_id') = tenant_id OR auth.jwt() ->> 'email' = 'sanju13july@gmail.com'
+);
+CREATE POLICY "Users can insert feedback" ON feedback FOR INSERT WITH CHECK (
+  (auth.jwt() -> 'user_metadata' ->> 'tenant_id') = tenant_id OR auth.jwt() ->> 'email' = 'sanju13july@gmail.com'
+);
 CREATE POLICY "Admins can view all feedback" ON feedback FOR SELECT USING (auth.jwt() ->> 'email' = 'sanju13july@gmail.com');
 
 -- Create Workspace Users Table

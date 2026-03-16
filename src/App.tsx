@@ -50,6 +50,7 @@ import {
   MessageSquare,
   CheckCircle2
 } from 'lucide-react';
+import { NewUserModal } from './components/NewUserModal';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   AreaChart, 
@@ -72,7 +73,7 @@ import 'jspdf-autotable';
 import { createClient } from '@supabase/supabase-js';
 import { Product, Contact, Invoice, Quotation, View, InvoiceItem, Tenant, AppConfig, AppNotification, WorkspaceUser } from './types';
 import { cn, formatCurrency, calculateGST } from './utils';
-import { supabase } from './lib/supabase';
+import { supabase, supabaseUrl, supabaseAnonKey } from './lib/supabase';
 import { NewQuotationModal } from './components/NewQuotationModal';
 import { NewInvoiceModal } from './components/NewInvoiceModal';
 import { Login } from './components/Login';
@@ -80,6 +81,12 @@ import { ResetPassword } from './components/ResetPassword';
 import { LandingPage } from './components/LandingPage';
 
 // Mock Data
+const PLAN_LIMITS = {
+  standard: 3,
+  pro: 8,
+  enterprise: 25
+};
+
 const MOCK_TENANTS: Tenant[] = [
   { id: '1', name: 'Johar Billing Solutions', gstin: '27ABCDE1234F1Z5', email: 'contact@joharbilling.com', phone: '+91 98765 43210', address: 'Mumbai', plan: 'enterprise', status: 'active', billingCycle: 'yearly', nextBillingDate: '2025-01-01', amount: 15000 },
   { id: '2', name: 'South India Retail', gstin: '33FGHIJ5678K2Z6', email: 'billing@southretail.com', phone: '+91 88888 77777', address: 'Chennai', plan: 'pro', status: 'active', billingCycle: 'monthly', nextBillingDate: '2024-04-01', amount: 1200 },
@@ -283,7 +290,7 @@ export default function App() {
       const { data: productsData } = await supabase
         .from('products')
         .select('*')
-        .eq('user_id', userId);
+        .eq('tenant_id', tenantId);
       if (productsData) {
         setProducts(productsData.map(p => ({
           id: p.id,
@@ -301,7 +308,7 @@ export default function App() {
       const { data: contactsData } = await supabase
         .from('contacts')
         .select('*')
-        .eq('user_id', userId);
+        .eq('tenant_id', tenantId);
       if (contactsData) {
         setContacts(contactsData.map(c => ({
           id: c.id,
@@ -322,7 +329,7 @@ export default function App() {
           *,
           invoice_items (*)
         `)
-        .eq('user_id', userId)
+        .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false });
       
       if (invoicesData) {
@@ -332,7 +339,7 @@ export default function App() {
           date: inv.date,
           dueDate: inv.due_date,
           contactId: inv.contact_id,
-          tenantId: '1',
+          tenantId: tenantId,
           subtotal: Number(inv.subtotal),
           totalGst: Number(inv.total_gst),
           totalAmount: Number(inv.total_amount),
@@ -355,10 +362,13 @@ export default function App() {
       }
 
       // Fetch Workspace Users
-      const { data: usersData } = await supabase
-        .from('workspace_users')
-        .select('*')
-        .eq('tenant_id', tenantId);
+      let usersQuery = supabase.from('workspace_users').select('*');
+      
+      if (!isAdmin) {
+        usersQuery = usersQuery.eq('tenant_id', tenantId);
+      }
+      
+      const { data: usersData } = await usersQuery;
       
       if (usersData) {
         setWorkspaceUsers(usersData.map(u => ({
@@ -370,8 +380,15 @@ export default function App() {
           tenantId: u.tenant_id
         })));
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching data:', err);
+      if (err.message?.includes('relation') && err.message?.includes('does not exist')) {
+        if (supabaseUrl.includes('lliahczkndxudycvypkz')) {
+          showToast('Table not found. You are currently using the fallback Supabase project. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Settings.', 'error');
+        } else {
+          showToast(`Table not found: ${err.message}. Please ensure you have run the SQL schema in your Supabase editor.`, 'error');
+        }
+      }
     }
   };
 
@@ -382,6 +399,7 @@ export default function App() {
   };
 
   const isAdmin = user?.email?.toLowerCase() === 'sanju13july@gmail.com';
+  const isTenantAdmin = user?.user_metadata?.role === 'admin' || isAdmin;
 
   useEffect(() => {
     const handleResize = () => {
@@ -2454,7 +2472,7 @@ export default function App() {
           <NavItem icon={<FileText />} label="Quotations" active={currentView === 'quotations'} onClick={() => { setCurrentView('quotations'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
           <NavItem icon={<Package />} label="Inventory" active={currentView === 'inventory'} onClick={() => { setCurrentView('inventory'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
           <NavItem icon={<Users />} label="Customers" active={currentView === 'customers'} onClick={() => { setCurrentView('customers'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
-          {!isAdmin && (
+          {isTenantAdmin && (
             <NavItem icon={<User />} label="Users" active={currentView === 'users'} onClick={() => { setCurrentView('users'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
           )}
           {isAdmin && (
@@ -2475,10 +2493,31 @@ export default function App() {
           <NavItem icon={<Settings />} label="Settings" active={currentView === 'settings'} onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} collapsed={!isSidebarOpen && !isMobileMenuOpen} primaryColor={appConfig.primaryColor} />
         </nav>
 
-        <div className="p-4 border-t border-white/10 hidden lg:block">
+        <div className="p-4 border-t border-white/10 space-y-4">
+          <div className={cn(
+            "flex items-center gap-3 px-3 py-2 rounded-xl transition-all",
+            supabaseUrl.includes('lliahczkndxudycvypkz') 
+              ? "bg-amber-500/10 border border-amber-500/20" 
+              : "bg-emerald-500/10 border border-emerald-500/20",
+            (!isSidebarOpen && !isMobileMenuOpen) && "justify-center px-0"
+          )}>
+            <div className={cn(
+              "w-2 h-2 rounded-full shrink-0 animate-pulse",
+              supabaseUrl.includes('lliahczkndxudycvypkz') ? "bg-amber-500" : "bg-emerald-500"
+            )} />
+            {(isSidebarOpen || isMobileMenuOpen) && (
+              <div className="flex flex-col overflow-hidden">
+                <span className="text-[10px] font-bold text-white/40 uppercase leading-none mb-1">Database</span>
+                <span className="text-[10px] font-bold text-white truncate">
+                  {supabaseUrl.includes('lliahczkndxudycvypkz') ? 'Fallback Project' : 'Your Project'}
+                </span>
+              </div>
+            )}
+          </div>
+          
           <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="w-full flex items-center justify-center p-2 rounded-lg hover:bg-white/5 transition-colors"
+            className="w-full flex items-center justify-center p-2 rounded-lg hover:bg-white/5 transition-colors hidden lg:flex"
           >
             {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -2780,7 +2819,8 @@ export default function App() {
                     type: invoice.type,
                     original_invoice_id: invoice.originalInvoiceId,
                     invoice_type: invoice.invoiceType,
-                    user_id: user.id
+                    user_id: user.id,
+                    tenant_id: activeTenantId
                   }])
                   .select();
 
@@ -2805,7 +2845,8 @@ export default function App() {
                   price: item.price,
                   gst_rate: item.gstRate,
                   amount: item.amount,
-                  gst_amount: item.gstAmount
+                  gst_amount: item.gstAmount,
+                  tenant_id: activeTenantId
                 }));
 
                 const { error: itemsError } = await supabase
@@ -2850,8 +2891,8 @@ export default function App() {
                 setUserCreationLoading(true);
                 try {
                   const adminClient = createClient(
-                    import.meta.env.VITE_SUPABASE_URL || 'https://lliahczkndxudycvypkz.supabase.co',
-                    import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxsaWFoY3prbmR4dWR5Y3Z5cGt6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MTMzMjEsImV4cCI6MjA4ODE4OTMyMX0.8uAavq7sCk34ElXqL5rS4wWSP5OVZmlttJrp_RRxBZo',
+                    supabaseUrl,
+                    supabaseAnonKey,
                     { auth: { persistSession: false } }
                   );
                   
@@ -2876,7 +2917,15 @@ export default function App() {
                   }
                 } catch (err: any) {
                   console.error('Error creating tenant user:', err);
-                  showToast(err.message || 'Failed to create tenant user in Supabase', 'error');
+                  if (err.message?.includes('relation') && err.message?.includes('does not exist')) {
+                    if (supabaseUrl.includes('lliahczkndxudycvypkz')) {
+                      showToast('Table not found. You are currently using the fallback Supabase project. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Settings.', 'error');
+                    } else {
+                      showToast(`Table not found: ${err.message}. Please ensure you have run the SQL schema in your Supabase editor.`, 'error');
+                    }
+                  } else {
+                    showToast(err.message || 'Failed to create tenant user in Supabase', 'error');
+                  }
                   // Still add to local list for UI feedback if desired, or skip
                   setTenants([tenant, ...tenants]);
                 } finally {
@@ -2922,7 +2971,8 @@ export default function App() {
                       stock: product.stock,
                       unit: product.unit,
                       gst_rate: product.gstRate,
-                      user_id: user.id
+                      user_id: user.id,
+                      tenant_id: activeTenantId
                     }])
                     .select();
                   if (error) throw error;
@@ -2964,7 +3014,8 @@ export default function App() {
                 business: feedback.business,
                 mobile: feedback.mobile,
                 comments: feedback.comments,
-                user_id: user?.id
+                user_id: user?.id,
+                tenant_id: activeTenantId
               }]);
 
               // 2. Send Email via our new API
@@ -2990,40 +3041,54 @@ export default function App() {
           isOpen={isNewUserModalOpen}
           onClose={() => setIsNewUserModalOpen(false)}
           editingUser={editingUser}
-          onSave={async (user, password) => {
+          isAdmin={isAdmin}
+          tenants={tenants}
+          activeTenantId={activeTenantId}
+          onSave={async (userData, password) => {
             try {
               if (editingUser) {
                 const { error } = await supabase
                   .from('workspace_users')
                   .update({
-                    name: user.name,
-                    role: user.role,
-                    status: user.status
+                    name: userData.name,
+                    role: userData.role,
+                    status: userData.status
                   })
                   .eq('id', editingUser.id);
                 
                 if (error) throw error;
 
-                setWorkspaceUsers(workspaceUsers.map(u => u.id === editingUser.id ? { ...u, ...user } : u));
+                setWorkspaceUsers(workspaceUsers.map(u => u.id === editingUser.id ? { ...u, ...userData } : u));
                 showToast('User updated successfully');
               } else {
+                // Check plan limits
+                const targetTenantId = isAdmin ? (userData.tenantId || activeTenantId) : activeTenantId;
+                const currentTenant = tenants.find(t => t.id === targetTenantId);
+                const planLimit = currentTenant ? PLAN_LIMITS[currentTenant.plan as keyof typeof PLAN_LIMITS] : 3;
+                
+                const tenantUsersCount = workspaceUsers.filter(u => u.tenantId === targetTenantId).length;
+                if (tenantUsersCount >= planLimit) {
+                  showToast(`You have reached the user limit for the ${currentTenant?.plan} plan (${planLimit} users). Please upgrade to add more users.`, 'error');
+                  return;
+                }
+
                 if (password) {
                   setUserCreationLoading(true);
                   try {
                     const adminClient = createClient(
-                      import.meta.env.VITE_SUPABASE_URL || 'https://lliahczkndxudycvypkz.supabase.co',
-                      import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxsaWFoY3prbmR4dWR5Y3Z5cGt6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MTMzMjEsImV4cCI6MjA4ODE4OTMyMX0.8uAavq7sCk34ElXqL5rS4wWSP5OVZmlttJrp_RRxBZo',
+                      supabaseUrl,
+                      supabaseAnonKey,
                       { auth: { persistSession: false } }
                     );
                     
                     const { data, error: signUpError } = await adminClient.auth.signUp({
-                      email: user.email!,
+                      email: userData.email!,
                       password: password,
                       options: {
                         data: {
-                          full_name: user.name,
-                          role: user.role,
-                          tenant_id: activeTenantId
+                          full_name: userData.name,
+                          role: userData.role,
+                          tenant_id: targetTenantId
                         }
                       }
                     });
@@ -3033,11 +3098,11 @@ export default function App() {
                     if (data.user) {
                       const newUser = { 
                         id: data.user.id,
-                        name: user.name,
-                        email: user.email,
-                        role: user.role,
-                        status: user.status,
-                        tenant_id: activeTenantId,
+                        name: userData.name,
+                        email: userData.email,
+                        role: userData.role,
+                        status: userData.status,
+                        tenant_id: targetTenantId,
                         user_id: user?.id
                       };
 
@@ -3047,12 +3112,20 @@ export default function App() {
                       
                       if (dbError) throw dbError;
 
-                      setWorkspaceUsers([...workspaceUsers, { ...user, id: data.user.id, tenantId: activeTenantId } as WorkspaceUser]);
+                      setWorkspaceUsers([...workspaceUsers, { ...userData, id: data.user.id, tenantId: targetTenantId } as WorkspaceUser]);
                       showToast('User created successfully in Supabase Auth');
                     }
                   } catch (err: any) {
                     console.error('Error creating user:', err);
-                    showToast(err.message || 'Failed to create user in Supabase', 'error');
+                    if (err.message?.includes('relation') && err.message?.includes('does not exist')) {
+                      if (supabaseUrl.includes('lliahczkndxudycvypkz')) {
+                        showToast('Table not found. You are currently using the fallback Supabase project. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Settings.', 'error');
+                      } else {
+                        showToast(`Table not found: ${err.message}. Please ensure you have run the SQL schema in your Supabase editor.`, 'error');
+                      }
+                    } else {
+                      showToast(err.message || 'Failed to create user in Supabase', 'error');
+                    }
                   } finally {
                     setUserCreationLoading(false);
                   }
@@ -3071,6 +3144,7 @@ export default function App() {
           isOpen={isNewCustomerModalOpen}
           onClose={() => setIsNewCustomerModalOpen(false)}
           editingCustomer={editingCustomer}
+          activeTenantId={activeTenantId}
           onSave={async (customer) => {
             try {
               if (user) {
@@ -3099,7 +3173,8 @@ export default function App() {
                       address: customer.address,
                       type: customer.type,
                       customer_type: customer.customerType,
-                      user_id: user.id
+                      user_id: user.id,
+                      tenant_id: activeTenantId
                     }])
                     .select();
                   if (error) throw error;
@@ -3411,11 +3486,12 @@ function NewTenantModal({ isOpen, onClose, editingTenant, onSave }: {
   );
 }
 
-function NewCustomerModal({ isOpen, onClose, editingCustomer, onSave }: { 
+function NewCustomerModal({ isOpen, onClose, editingCustomer, onSave, activeTenantId }: { 
   isOpen: boolean, 
   onClose: () => void, 
   editingCustomer: Contact | null,
-  onSave: (customer: Contact) => void 
+  onSave: (customer: Contact) => void,
+  activeTenantId: string
 }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -3457,7 +3533,7 @@ function NewCustomerModal({ isOpen, onClose, editingCustomer, onSave }: {
       address,
       type: 'customer',
       customerType,
-      tenantId: '1'
+      tenantId: activeTenantId
     };
 
     onSave(customer);
@@ -3843,124 +3919,4 @@ function PricingModal({ isOpen, onClose, onSelectPlan }: {
   );
 }
 
-function NewUserModal({ isOpen, onClose, editingUser, onSave }: { 
-  isOpen: boolean; 
-  onClose: () => void; 
-  editingUser: WorkspaceUser | null;
-  onSave: (user: Partial<WorkspaceUser>, password?: string) => void;
-}) {
-  const [formData, setFormData] = useState<Partial<WorkspaceUser>>({
-    name: '',
-    email: '',
-    role: 'staff',
-    status: 'active'
-  });
-  const [password, setPassword] = useState('');
 
-  useEffect(() => {
-    if (editingUser) {
-      setFormData(editingUser);
-      setPassword('');
-    } else {
-      setFormData({
-        name: '',
-        email: '',
-        role: 'staff',
-        status: 'active'
-      });
-      setPassword('');
-    }
-  }, [editingUser, isOpen]);
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
-        <div className="flex items-center justify-between p-6 border-b border-slate-100">
-          <h2 className="text-xl font-bold">{editingUser ? 'Edit User' : 'New User'}</h2>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        
-        <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
-            <input
-              type="text"
-              value={formData.name || ''}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
-              placeholder="Enter user name"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-            <input
-              type="email"
-              value={formData.email || ''}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
-              placeholder="Enter user email"
-            />
-          </div>
-
-          {!editingUser && (
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
-                placeholder="Enter password"
-              />
-            </div>
-          )}
-          
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
-            <select
-              value={formData.role || 'staff'}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
-              className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
-            >
-              <option value="admin">Admin</option>
-              <option value="manager">Manager</option>
-              <option value="staff">Staff</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
-            <select
-              value={formData.status || 'active'}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-              className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </div>
-        </div>
-        
-        <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-xl transition-colors font-medium"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onSave(formData, password)}
-            className="px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl transition-colors font-medium"
-          >
-            {editingUser ? 'Save Changes' : 'Create User'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}

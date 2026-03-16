@@ -5,30 +5,38 @@ import { WorkspaceUser } from '../types';
 interface NewUserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (user: Partial<WorkspaceUser>) => void;
+  onSave: (user: Partial<WorkspaceUser>, password?: string) => void;
   editingUser?: WorkspaceUser | null;
+  isAdmin?: boolean;
+  tenants?: any[];
+  activeTenantId?: string;
 }
 
-export function NewUserModal({ isOpen, onClose, onSave, editingUser }: NewUserModalProps) {
+export function NewUserModal({ isOpen, onClose, onSave, editingUser, isAdmin, tenants, activeTenantId }: NewUserModalProps) {
   const [formData, setFormData] = useState<Partial<WorkspaceUser>>({
     name: '',
     email: '',
     role: 'staff',
-    status: 'active'
+    status: 'active',
+    tenantId: activeTenantId || '1'
   });
+  const [password, setPassword] = useState('');
 
   useEffect(() => {
     if (editingUser) {
       setFormData(editingUser);
+      setPassword('');
     } else {
       setFormData({
         name: '',
         email: '',
         role: 'staff',
-        status: 'active'
+        status: 'active',
+        tenantId: activeTenantId || '1'
       });
+      setPassword('');
     }
-  }, [editingUser, isOpen]);
+  }, [editingUser, isOpen, activeTenantId]);
 
   if (!isOpen) return null;
 
@@ -42,7 +50,7 @@ export function NewUserModal({ isOpen, onClose, onSave, editingUser }: NewUserMo
           </button>
         </div>
         
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
             <input
@@ -62,9 +70,38 @@ export function NewUserModal({ isOpen, onClose, onSave, editingUser }: NewUserMo
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
               placeholder="Enter user email"
+              disabled={!!editingUser}
             />
           </div>
+
+          {!editingUser && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
+                placeholder="Enter password"
+              />
+            </div>
+          )}
           
+          {isAdmin && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Tenant</label>
+              <select
+                value={formData.tenantId || '1'}
+                onChange={(e) => setFormData({ ...formData, tenantId: e.target.value })}
+                className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
+              >
+                {tenants?.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
             <select
@@ -99,7 +136,7 @@ export function NewUserModal({ isOpen, onClose, onSave, editingUser }: NewUserMo
             Cancel
           </button>
           <button
-            onClick={() => onSave(formData)}
+            onClick={() => onSave(formData, password)}
             className="px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl transition-colors font-medium"
           >
             {editingUser ? 'Save Changes' : 'Create User'}
