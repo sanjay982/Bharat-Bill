@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { uploadFile } from './lib/storage';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -839,6 +840,7 @@ export default function App() {
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Role</th>
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Tenant ID</th>
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
@@ -871,6 +873,9 @@ export default function App() {
                   )}>
                     {workspaceUser.status}
                   </span>
+                </td>
+                <td className="px-6 py-4 text-sm text-slate-600">
+                  {tenants.find(t => t.id === workspaceUser.tenantId)?.name || workspaceUser.tenantId}
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-2">
@@ -1322,17 +1327,21 @@ export default function App() {
                   <input 
                     type="file" 
                     accept="image/*"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
+                        try {
+                          showToast('Uploading image...', 'success');
+                          const url = await uploadFile('images', file);
                           setAppConfig({
                             ...appConfig,
-                            loginAd: { ...appConfig.loginAd!, imageUrl: event.target?.result as string }
+                            loginAd: { ...appConfig.loginAd!, imageUrl: url }
                           });
-                        };
-                        reader.readAsDataURL(file);
+                          showToast('Image uploaded successfully');
+                        } catch (err: any) {
+                          console.error('Upload error:', err);
+                          showToast(err.message || 'Failed to upload image', 'error');
+                        }
                       }
                     }}
                     className="w-full text-[10px] text-slate-500 file:mr-4 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-[10px] file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
@@ -1362,17 +1371,21 @@ export default function App() {
                   <input 
                     type="file" 
                     accept="video/mp4"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
+                        try {
+                          showToast('Uploading video...', 'success');
+                          const url = await uploadFile('videos', file);
                           setAppConfig({
                             ...appConfig,
-                            loginAd: { ...appConfig.loginAd!, videoUrl: event.target?.result as string }
+                            loginAd: { ...appConfig.loginAd!, videoUrl: url }
                           });
-                        };
-                        reader.readAsDataURL(file);
+                          showToast('Video uploaded successfully');
+                        } catch (err: any) {
+                          console.error('Upload error:', err);
+                          showToast(err.message || 'Failed to upload video', 'error');
+                        }
                       }
                     }}
                     className="w-full text-[10px] text-slate-500 file:mr-4 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-[10px] file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
@@ -1770,23 +1783,43 @@ export default function App() {
                       <input 
                         type="file" 
                         accept="image/*"
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                              const img = new Image();
-                              img.onload = () => {
-                                const canvas = document.createElement('canvas');
-                                canvas.width = 250;
-                                canvas.height = 250;
-                                const ctx = canvas.getContext('2d');
-                                ctx?.drawImage(img, 0, 0, 250, 250);
-                                setBusinessProfile({...businessProfile, logo: canvas.toDataURL('image/png')});
+                            try {
+                              showToast('Processing logo...', 'success');
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                const img = new Image();
+                                img.onload = async () => {
+                                  const canvas = document.createElement('canvas');
+                                  canvas.width = 250;
+                                  canvas.height = 250;
+                                  const ctx = canvas.getContext('2d');
+                                  ctx?.drawImage(img, 0, 0, 250, 250);
+                                  
+                                  canvas.toBlob(async (blob) => {
+                                    if (blob) {
+                                      const resizedFile = new File([blob], 'business-logo.png', { type: 'image/png' });
+                                      try {
+                                        showToast('Uploading logo...', 'success');
+                                        const url = await uploadFile('images', resizedFile);
+                                        setBusinessProfile({...businessProfile, logo: url});
+                                        showToast('Logo uploaded successfully');
+                                      } catch (uploadErr: any) {
+                                        console.error('Upload error:', uploadErr);
+                                        showToast(uploadErr.message || 'Failed to upload logo', 'error');
+                                      }
+                                    }
+                                  }, 'image/png');
+                                };
+                                img.src = event.target?.result as string;
                               };
-                              img.src = event.target?.result as string;
-                            };
-                            reader.readAsDataURL(file);
+                              reader.readAsDataURL(file);
+                            } catch (err: any) {
+                              console.error('Processing error:', err);
+                              showToast('Failed to process logo', 'error');
+                            }
                           }
                         }}
                         className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
@@ -1894,14 +1927,35 @@ export default function App() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-semibold text-slate-600">Logo URL</label>
-                      <input 
-                        type="text" 
-                        value={appConfig.logoUrl}
-                        onChange={(e) => setAppConfig({...appConfig, logoUrl: e.target.value})}
-                        placeholder="https://example.com/logo.png"
-                        className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
-                      />
+                      <label className="text-xs font-semibold text-slate-600">App Logo</label>
+                      <div className="space-y-2">
+                        <input 
+                          type="text" 
+                          value={appConfig.logoUrl}
+                          onChange={(e) => setAppConfig({...appConfig, logoUrl: e.target.value})}
+                          placeholder="https://example.com/logo.png"
+                          className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
+                        />
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              try {
+                                showToast('Uploading app logo...', 'success');
+                                const url = await uploadFile('images', file);
+                                setAppConfig({...appConfig, logoUrl: url});
+                                showToast('App logo uploaded successfully');
+                              } catch (err: any) {
+                                console.error('Upload error:', err);
+                                showToast(err.message || 'Failed to upload app logo', 'error');
+                              }
+                            }
+                          }}
+                          className="w-full text-[10px] text-slate-500 file:mr-4 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-[10px] file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+                        />
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-semibold text-slate-600">Default Currency</label>
@@ -2983,7 +3037,8 @@ export default function App() {
                         email: user.email,
                         role: user.role,
                         status: user.status,
-                        tenant_id: activeTenantId
+                        tenant_id: activeTenantId,
+                        user_id: user?.id
                       };
 
                       const { error: dbError } = await supabase

@@ -92,3 +92,29 @@ CREATE POLICY "Users can manage their own invoice items" ON invoice_items FOR AL
 );
 CREATE POLICY "Users can insert feedback" ON feedback FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Admins can view all feedback" ON feedback FOR SELECT USING (auth.jwt() ->> 'email' = 'sanju13july@gmail.com');
+
+-- Create Workspace Users Table
+CREATE TABLE IF NOT EXISTS workspace_users (
+  id UUID PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  role TEXT NOT NULL,
+  status TEXT NOT NULL,
+  tenant_id TEXT NOT NULL,
+  user_id UUID REFERENCES auth.users(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+ALTER TABLE workspace_users ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view workspace users in their tenant" ON workspace_users
+  FOR SELECT USING (
+    (auth.jwt() -> 'user_metadata' ->> 'tenant_id') = tenant_id
+  );
+
+CREATE POLICY "Admins can manage workspace users in their tenant" ON workspace_users
+  FOR ALL USING (
+    (auth.jwt() -> 'user_metadata' ->> 'tenant_id') = tenant_id
+    AND
+    (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+  );
