@@ -3086,6 +3086,11 @@ export default function App() {
           tenants={tenants}
           onSave={async (userData, password) => {
             try {
+              if (!userData.name || userData.name.trim() === '') {
+                showToast('Please enter a user name', 'error');
+                return;
+              }
+
               if (editingUser) {
                 const { error } = await supabase
                   .from('workspace_users')
@@ -3109,6 +3114,11 @@ export default function App() {
                 const tenantUsersCount = workspaceUsers.filter(u => u.tenantId === targetTenantId).length;
                 if (tenantUsersCount >= planLimit) {
                   showToast(`You have reached the user limit for the ${currentTenant?.plan} plan (${planLimit} users). Please upgrade to add more users.`, 'error');
+                  return;
+                }
+
+                if (!userData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userData.email)) {
+                  showToast('Please enter a valid email address', 'error');
                   return;
                 }
 
@@ -3161,7 +3171,7 @@ export default function App() {
                       if (supabaseUrl.includes('lliahczkndxudycvypkz')) {
                         showToast('Table not found. You are currently using the fallback Supabase project. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Settings.', 'error');
                       } else {
-                        showToast(`Table not found: ${err.message}. Please ensure you have run the SQL schema in your Supabase editor.`, 'error');
+                        showToast(`Table not found in project: ${supabaseUrl}. Please ensure you ran the SQL in the correct project.`, 'error');
                       }
                     } else {
                       showToast(err.message || 'Failed to create user in Supabase', 'error');
