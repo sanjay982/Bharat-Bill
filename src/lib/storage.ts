@@ -7,6 +7,14 @@ import { supabase } from './supabase';
  * @returns The public URL of the uploaded file
  */
 export const uploadFile = async (bucket: string, file: File): Promise<string> => {
+  // Validate file type
+  const isImage = file.type.startsWith('image/');
+  const isVideo = file.type.startsWith('video/');
+  
+  if (!isImage && !isVideo) {
+    throw new Error('Only images and videos are allowed.');
+  }
+
   // Create a unique file name to avoid collisions
   const fileExt = file.name.split('.').pop();
   const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;

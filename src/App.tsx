@@ -270,6 +270,7 @@ export default function App() {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state change event:', event, 'Session user:', session?.user);
       setUser(session?.user ?? null);
       if (session?.user) {
         const tenantId = session.user.user_metadata?.tenant_id || '1';
@@ -3167,6 +3168,7 @@ export default function App() {
                     }
                   } catch (err: any) {
                     console.error('Error creating user:', err);
+                    console.log('Error details:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
                     if (err.message?.includes('relation') && err.message?.includes('does not exist')) {
                       if (supabaseUrl.includes('lliahczkndxudycvypkz')) {
                         showToast('Table not found. You are currently using the fallback Supabase project. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Settings.', 'error');
