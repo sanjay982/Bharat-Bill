@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { PolicyModal } from './PolicyModal';
-import { CubeBackground } from './CubeBackground';
+import { Interactive3DBackground } from './Interactive3DBackground';
 import { ParticleText } from './ParticleText';
 import { GlowCard } from './GlowCard';
 import { 
@@ -75,9 +75,10 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-emerald-100 selection:text-emerald-900">
+    <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden">
+      <Interactive3DBackground />
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
+      <nav className="fixed top-0 w-full z-50 bg-white/60 backdrop-blur-xl border-b border-slate-100 glass-card">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-600/20">
@@ -212,8 +213,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* Benefits Section */}
-      <section id="benefits" className="py-24 bg-slate-50 relative overflow-hidden">
-        <CubeBackground />
+      <section id="benefits" className="py-24 bg-slate-50/50 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-20">
             <h2 className="text-sm font-bold text-emerald-600 uppercase tracking-[0.2em] mb-4">Why Choose Us</h2>
@@ -234,8 +234,8 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
               >
-                <GlowCard className="h-full">
-                  <div className="bg-white p-8 h-full group-hover:bg-white/90 transition-colors">
+                <GlowCard className="h-full depth-card">
+                  <div className="bg-white/80 backdrop-blur-sm p-8 h-full group-hover:bg-white/90 transition-colors rounded-3xl">
                     <div className={`w-14 h-14 ${benefit.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
                       {benefit.icon}
                     </div>
@@ -253,7 +253,6 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
 
       {/* Features Section */}
       <section id="features" className="py-24 relative overflow-hidden">
-        <CubeBackground />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-sm font-bold text-emerald-600 uppercase tracking-[0.2em] mb-4">Advanced Features</h2>
@@ -280,8 +279,8 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
               >
-                <GlowCard className="h-full">
-                  <div className="bg-slate-50 p-8 h-full group-hover:bg-white transition-all">
+                <GlowCard className="h-full depth-card">
+                  <div className="bg-slate-50/80 backdrop-blur-sm p-8 h-full group-hover:bg-white transition-all rounded-3xl">
                     <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform">
                       {feature.icon}
                     </div>
@@ -296,8 +295,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-24 bg-slate-900 text-white overflow-hidden relative">
-        <CubeBackground />
+      <section id="pricing" className="py-24 bg-slate-900/90 text-white overflow-hidden relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full">
           <div className="absolute top-0 left-0 w-96 h-96 bg-emerald-500/10 blur-[120px] -ml-48 -mt-48" />
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-500/10 blur-[120px] -mr-48 -mb-48" />

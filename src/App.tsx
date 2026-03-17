@@ -48,7 +48,9 @@ import {
   Star,
   Shield,
   MessageSquare,
-  CheckCircle2
+  CheckCircle2,
+  ArrowRight,
+  Camera
 } from 'lucide-react';
 import { Interactive3DBackground } from './components/Interactive3DBackground';
 import { NewUserModal } from './components/NewUserModal';
@@ -798,16 +800,19 @@ export default function App() {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const renderCustomers = () => (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-      <div className="p-4 md:p-6 border-bottom border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h2 className="text-xl font-bold">Customers</h2>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+    <div className="bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-white/20 overflow-hidden depth-card">
+      <div className="p-6 md:p-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white/50">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Customers</h2>
+          <p className="text-sm text-slate-500 font-medium">Manage your business relationships</p>
+        </div>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
               placeholder="Search customers..." 
-              className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 w-full md:w-64"
+              className="pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 w-full md:w-72 shadow-inner"
             />
           </div>
           <button 
@@ -817,7 +822,7 @@ export default function App() {
                 setIsNewCustomerModalOpen(true);
               }
             }}
-            className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors"
+            className="neo-button-primary px-6 py-3 rounded-2xl text-sm font-black flex items-center justify-center gap-2"
           >
             <Plus className="w-4 h-4" /> Add Customer
           </button>
@@ -835,44 +840,50 @@ export default function App() {
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
-            {contacts.filter(c => c.type === 'customer').map(customer => (
-              <tr key={customer.id} className="hover:bg-slate-50/50 transition-colors">
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 text-xs font-bold">
-                      {customer.name.charAt(0)}
+          <tbody className="divide-y divide-slate-50">
+            {contacts.filter(c => c.type === 'customer').map((customer) => (
+              <motion.tr 
+                key={customer.id} 
+                whileHover={{ backgroundColor: "rgba(248, 250, 252, 0.8)", x: 4 }}
+                className="group transition-all cursor-pointer"
+              >
+                <td className="px-6 py-5">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center text-slate-600 shadow-sm group-hover:shadow-md transition-all">
+                      <span className="text-sm font-black uppercase">{customer.name.charAt(0)}</span>
                     </div>
-                    <span className="text-sm font-medium text-slate-900">{customer.name}</span>
+                    <span className="text-sm font-black text-slate-900">{customer.name}</span>
                   </div>
                 </td>
-                <td className="px-6 py-4">
-                  <p className="text-sm text-slate-600">{customer.email}</p>
-                  <p className="text-xs text-slate-400">{customer.phone}</p>
+                <td className="px-6 py-5">
+                  <div className="text-sm font-black text-slate-700">{customer.email}</div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{customer.phone}</div>
                 </td>
-                <td className="px-6 py-4 text-sm text-slate-500 uppercase">{customer.customerType || 'b2b'}</td>
-                <td className="px-6 py-4 text-sm text-slate-500 font-mono">{customer.gstin || 'Unregistered'}</td>
-                <td className="px-6 py-4 text-sm text-slate-500 max-w-xs truncate">{customer.address}</td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
+                <td className="px-6 py-5">
+                  <span className="px-3 py-1 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-black tracking-wider uppercase">{customer.customerType || 'b2b'}</span>
+                </td>
+                <td className="px-6 py-5 text-sm font-bold text-slate-500 font-mono">{customer.gstin || 'Unregistered'}</td>
+                <td className="px-6 py-5 text-sm font-bold text-slate-500 max-w-xs truncate">{customer.address}</td>
+                <td className="px-6 py-5 text-right">
+                  <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
                     <button 
                       onClick={() => {
                         setEditingCustomer(customer);
                         setIsNewCustomerModalOpen(true);
                       }}
-                      className="p-2 text-slate-400 hover:text-primary transition-colors"
+                      className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-emerald-600 transition-all shadow-sm border border-transparent hover:border-emerald-100 active:scale-90"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button 
                       onClick={() => deleteContact(customer.id)}
-                      className="p-2 text-slate-400 hover:text-danger transition-colors"
+                      className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-rose-600 transition-all shadow-sm border border-transparent hover:border-rose-100 active:scale-90"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </td>
-              </tr>
+              </motion.tr>
             ))}
           </tbody>
         </table>
@@ -882,16 +893,19 @@ export default function App() {
 
   // Stats
   const renderUsers = () => (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-      <div className="p-4 md:p-6 border-bottom border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h2 className="text-xl font-bold">Workspace Users</h2>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+    <div className="bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-white/20 overflow-hidden depth-card">
+      <div className="p-6 md:p-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white/50">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Workspace Users</h2>
+          <p className="text-sm text-slate-500 font-medium">Manage team access and roles</p>
+        </div>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
               placeholder="Search users..." 
-              className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 w-full md:w-64"
+              className="pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 w-full md:w-72 shadow-inner"
             />
           </div>
           <button 
@@ -899,7 +913,7 @@ export default function App() {
               setEditingUser(null);
               setIsNewUserModalOpen(true);
             }}
-            className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors"
+            className="neo-button-primary px-6 py-3 rounded-2xl text-sm font-black flex items-center justify-center gap-2"
           >
             <Plus className="w-4 h-4" /> Add User
           </button>
@@ -917,47 +931,51 @@ export default function App() {
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
-            {workspaceUsers.map(workspaceUser => (
-              <tr key={workspaceUser.id} className="hover:bg-slate-50/50 transition-colors">
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 text-xs font-bold">
-                      {workspaceUser.name.charAt(0)}
+          <tbody className="divide-y divide-slate-50">
+            {workspaceUsers.map((workspaceUser) => (
+              <motion.tr 
+                key={workspaceUser.id} 
+                whileHover={{ backgroundColor: "rgba(248, 250, 252, 0.8)", x: 4 }}
+                className="group transition-all cursor-pointer"
+              >
+                <td className="px-6 py-5">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm group-hover:shadow-md transition-all">
+                      <span className="text-sm font-black uppercase">{workspaceUser.name.charAt(0)}</span>
                     </div>
-                    <span className="text-sm font-medium text-slate-900">{workspaceUser.name}</span>
+                    <span className="text-sm font-black text-slate-900">{workspaceUser.name}</span>
                   </div>
                 </td>
-                <td className="px-6 py-4 text-sm text-slate-600">{workspaceUser.email}</td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-5 text-sm font-black text-slate-700">{workspaceUser.email}</td>
+                <td className="px-6 py-5">
                   <span className={cn(
-                    "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                    workspaceUser.role === 'admin' ? "bg-purple-50 text-purple-700" :
-                    workspaceUser.role === 'manager' ? "bg-blue-50 text-blue-700" :
-                    "bg-slate-100 text-slate-600"
+                    "px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm",
+                    workspaceUser.role === 'admin' ? "bg-purple-100 text-purple-700 border border-purple-200/50" :
+                    workspaceUser.role === 'manager' ? "bg-blue-100 text-blue-700 border border-blue-200/50" :
+                    "bg-slate-100 text-slate-600 border border-slate-200/50"
                   )}>
                     {workspaceUser.role}
                   </span>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-5">
                   <span className={cn(
-                    "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                    workspaceUser.status === 'active' ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
+                    "px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm",
+                    workspaceUser.status === 'active' ? "bg-emerald-100 text-emerald-700 border border-emerald-200/50" : "bg-rose-100 text-rose-700 border border-rose-200/50"
                   )}>
                     {workspaceUser.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-sm text-slate-600">
+                <td className="px-6 py-5 text-sm font-bold text-slate-500 font-mono">
                   {tenants.find(t => t.id === workspaceUser.tenantId)?.name || workspaceUser.tenantId}
                 </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
+                <td className="px-6 py-5 text-right">
+                  <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
                     <button 
                       onClick={() => {
                         setEditingUser(workspaceUser);
                         setIsNewUserModalOpen(true);
                       }}
-                      className="p-2 text-slate-400 hover:text-emerald-600 transition-colors"
+                      className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-emerald-600 transition-all shadow-sm border border-transparent hover:border-emerald-100 active:scale-90"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
@@ -971,7 +989,6 @@ export default function App() {
                               .eq('id', workspaceUser.id);
                             
                             if (error) throw error;
-
                             setWorkspaceUsers(workspaceUsers.filter(u => u.id !== workspaceUser.id));
                             showToast('User deleted successfully');
                           } catch (err: any) {
@@ -980,13 +997,13 @@ export default function App() {
                           }
                         }
                       }}
-                      className="p-2 text-slate-400 hover:text-rose-600 transition-colors"
+                      className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-rose-600 transition-all shadow-sm border border-transparent hover:border-rose-100 active:scale-90"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </td>
-              </tr>
+              </motion.tr>
             ))}
           </tbody>
         </table>
@@ -1004,7 +1021,7 @@ export default function App() {
       <div className="flex justify-end">
         <button 
           onClick={() => setIsFeedbackModalOpen(true)}
-          className="bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all flex items-center gap-2"
+          className="neo-button-primary px-6 py-3 rounded-2xl text-sm font-black flex items-center gap-2"
         >
           <MessageSquare className="w-4 h-4" />
           Share Feedback
@@ -1023,7 +1040,7 @@ export default function App() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100"
+          className="lg:col-span-2 bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-slate-100 depth-card"
         >
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold">Revenue Overview</h3>
@@ -1057,7 +1074,7 @@ export default function App() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100"
+          className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-slate-100 depth-card"
         >
           <h3 className="text-lg font-semibold mb-6">Recent Transactions</h3>
           <div className="space-y-4">
@@ -1097,21 +1114,24 @@ export default function App() {
   );
 
   const renderQuotations = () => (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-      <div className="p-4 md:p-6 border-bottom border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h2 className="text-xl font-bold">Quotations</h2>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+    <div className="bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-white/20 overflow-hidden depth-card">
+      <div className="p-6 md:p-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white/50">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Quotations</h2>
+          <p className="text-sm text-slate-500 font-medium">Create and manage your business quotes</p>
+        </div>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
               placeholder="Search quotations..." 
-              className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 w-full md:w-64"
+              className="pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 w-full md:w-72 shadow-inner"
             />
           </div>
           <button 
             onClick={() => setIsNewQuotationModalOpen(true)}
-            className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors"
+            className="neo-button-primary px-6 py-3 rounded-2xl text-sm font-black flex items-center justify-center gap-2"
           >
             <Plus className="w-4 h-4" /> New Quotation
           </button>
@@ -1130,61 +1150,71 @@ export default function App() {
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
-            {quotations.map(quotation => (
-              <tr key={quotation.id} className="hover:bg-slate-50/50 transition-colors">
-                <td className="px-6 py-4 text-sm font-medium text-slate-900">{quotation.quotationNumber}</td>
-                <td className="px-6 py-4 text-sm text-slate-600">
-                  {contacts.find(c => c.id === quotation.contactId)?.name || 'Unknown'}
+          <tbody className="divide-y divide-slate-50">
+            {quotations.map((quotation) => (
+              <motion.tr 
+                key={quotation.id} 
+                whileHover={{ backgroundColor: "rgba(248, 250, 252, 0.8)", x: 4 }}
+                className="group transition-all cursor-pointer"
+              >
+                <td className="px-6 py-5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 shadow-sm group-hover:shadow-md transition-all">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <span className="text-sm font-black text-slate-900">{quotation.quotationNumber}</span>
+                  </div>
                 </td>
-                <td className="px-6 py-4 text-sm text-slate-500">{format(new Date(quotation.date), 'dd MMM yyyy')}</td>
-                <td className="px-6 py-4 text-sm text-slate-500">{format(new Date(quotation.validUntil), 'dd MMM yyyy')}</td>
-                <td className="px-6 py-4 text-sm font-semibold text-slate-900">{formatCurrency(quotation.totalAmount)}</td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-5">
+                  <div className="text-sm font-black text-slate-700">
+                    {contacts.find(c => c.id === quotation.contactId)?.name || 'Unknown'}
+                  </div>
+                </td>
+                <td className="px-6 py-5 text-sm font-bold text-slate-500">{format(new Date(quotation.date), 'dd MMM yyyy')}</td>
+                <td className="px-6 py-5 text-sm font-bold text-slate-500">{format(new Date(quotation.validUntil), 'dd MMM yyyy')}</td>
+                <td className="px-6 py-5 text-sm font-black text-slate-900">{formatCurrency(quotation.totalAmount)}</td>
+                <td className="px-6 py-5">
                   <span className={cn(
-                    "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                    quotation.status === 'converted' ? "bg-emerald-50 text-emerald-700" : 
-                    quotation.status === 'sent' ? "bg-blue-50 text-blue-700" :
-                    "bg-slate-100 text-slate-600"
+                    "px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm",
+                    quotation.status === 'converted' ? "bg-emerald-100 text-emerald-700 border border-emerald-200/50" : 
+                    quotation.status === 'sent' ? "bg-blue-100 text-blue-700 border border-blue-200/50" :
+                    "bg-slate-100 text-slate-600 border border-slate-200/50"
                   )}>
                     {quotation.status}
                   </span>
                 </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
+                <td className="px-6 py-5 text-right">
+                  <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
                     {quotation.status !== 'converted' && (
                       <button 
                         onClick={() => convertQuotationToInvoice(quotation)}
-                        className="p-2 text-slate-400 hover:text-emerald-600 transition-colors"
+                        className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-emerald-600 transition-all shadow-sm border border-transparent hover:border-emerald-100 active:scale-90"
                         title="Convert to Invoice"
                       >
-                        <FileText className="w-4 h-4" />
+                        <ArrowRight className="w-4 h-4" />
                       </button>
                     )}
                     <button 
                       onClick={() => generateQuotationPDF(quotation, 'print')}
-                      className="p-2 text-slate-400 hover:text-primary transition-colors"
-                      title="Print"
+                      className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-emerald-600 transition-all shadow-sm border border-transparent hover:border-emerald-100 active:scale-90"
                     >
                       <Printer className="w-4 h-4" />
                     </button>
                     <button 
                       onClick={() => generateQuotationPDF(quotation, 'download')}
-                      className="p-2 text-slate-400 hover:text-primary transition-colors"
-                      title="Download"
+                      className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-emerald-600 transition-all shadow-sm border border-transparent hover:border-emerald-100 active:scale-90"
                     >
                       <Download className="w-4 h-4" />
                     </button>
                     <button 
                       onClick={() => deleteQuotation(quotation.id)}
-                      className="p-2 text-slate-400 hover:text-danger transition-colors"
-                      title="Delete"
+                      className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-rose-600 transition-all shadow-sm border border-transparent hover:border-rose-100 active:scale-90"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </td>
-              </tr>
+              </motion.tr>
             ))}
           </tbody>
         </table>
@@ -1193,16 +1223,19 @@ export default function App() {
   );
 
   const renderInvoices = () => (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-      <div className="p-4 md:p-6 border-bottom border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h2 className="text-xl font-bold">Invoices</h2>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+    <div className="bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-white/20 overflow-hidden depth-card">
+      <div className="p-6 md:p-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white/50">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Invoices</h2>
+          <p className="text-sm text-slate-500 font-medium">Manage your sales and billing</p>
+        </div>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
               placeholder="Search invoices..." 
-              className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 w-full md:w-64"
+              className="pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 w-full md:w-72 shadow-inner"
             />
           </div>
           <button 
@@ -1220,7 +1253,7 @@ export default function App() {
                 setIsNewInvoiceModalOpen(true);
               }
             }}
-            className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors"
+            className="neo-button-primary px-6 py-3 rounded-2xl text-sm font-black flex items-center justify-center gap-2"
           >
             <Plus className="w-4 h-4" /> New Invoice
           </button>
@@ -1239,49 +1272,64 @@ export default function App() {
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
-            {invoices.map(invoice => (
-              <tr key={invoice.id} className="hover:bg-slate-50/50 transition-colors">
-                <td className="px-6 py-4 text-sm font-medium text-slate-900">{invoice.invoiceNumber}</td>
-                <td className="px-6 py-4 text-sm text-slate-600">
-                  {contacts.find(c => c.id === invoice.contactId)?.name || 'Unknown'}
+          <tbody className="divide-y divide-slate-50">
+            {invoices.map((invoice) => (
+              <motion.tr 
+                key={invoice.id} 
+                whileHover={{ backgroundColor: "rgba(248, 250, 252, 0.8)", x: 4 }}
+                className="group transition-all cursor-pointer"
+              >
+                <td className="px-6 py-5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 shadow-sm group-hover:shadow-md transition-all">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <span className="text-sm font-black text-slate-900">{invoice.invoiceNumber}</span>
+                  </div>
                 </td>
-                <td className="px-6 py-4 text-sm text-slate-500 uppercase">
-                  {invoice.type === 'credit_note' ? 'Credit Note' : invoice.type === 'debit_note' ? 'Debit Note' : invoice.invoiceType || 'b2b'}
+                <td className="px-6 py-5">
+                  <div className="text-sm font-black text-slate-700">
+                    {contacts.find(c => c.id === invoice.contactId)?.name || 'Unknown'}
+                  </div>
                 </td>
-                <td className="px-6 py-4 text-sm text-slate-500">{format(new Date(invoice.date), 'dd MMM yyyy')}</td>
-                <td className="px-6 py-4 text-sm font-semibold text-slate-900">{formatCurrency(invoice.totalAmount)}</td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-5">
+                  <span className="px-3 py-1 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-black tracking-wider uppercase">
+                    {invoice.type === 'credit_note' ? 'Credit Note' : invoice.type === 'debit_note' ? 'Debit Note' : invoice.invoiceType || 'b2b'}
+                  </span>
+                </td>
+                <td className="px-6 py-5 text-sm font-bold text-slate-500">{format(new Date(invoice.date), 'dd MMM yyyy')}</td>
+                <td className="px-6 py-5 text-sm font-black text-slate-900">{formatCurrency(invoice.totalAmount)}</td>
+                <td className="px-6 py-5">
                   <span className={cn(
-                    "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                    invoice.status === 'paid' ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+                    "px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm",
+                    invoice.status === 'paid' ? "bg-emerald-100 text-emerald-700 border border-emerald-200/50" : "bg-amber-100 text-amber-700 border border-amber-200/50"
                   )}>
                     {invoice.status}
                   </span>
                 </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
+                <td className="px-6 py-5 text-right">
+                  <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
                     <button 
                       onClick={() => generatePDF(invoice, 'print')}
-                      className="p-2 text-slate-400 hover:text-primary transition-colors"
+                      className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-emerald-600 transition-all shadow-sm border border-transparent hover:border-emerald-100 active:scale-90"
                     >
                       <Printer className="w-4 h-4" />
                     </button>
                     <button 
                       onClick={() => generatePDF(invoice, 'download')}
-                      className="p-2 text-slate-400 hover:text-primary transition-colors"
+                      className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-emerald-600 transition-all shadow-sm border border-transparent hover:border-emerald-100 active:scale-90"
                     >
                       <Download className="w-4 h-4" />
                     </button>
                     <button 
                       onClick={() => deleteInvoice(invoice.id)}
-                      className="p-2 text-slate-400 hover:text-danger transition-colors"
+                      className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-rose-600 transition-all shadow-sm border border-transparent hover:border-rose-100 active:scale-90"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </td>
-              </tr>
+              </motion.tr>
             ))}
           </tbody>
         </table>
@@ -1291,13 +1339,15 @@ export default function App() {
 
   const renderCMS = () => (
     <div className="space-y-8">
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+      <div className="bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-white/20 overflow-hidden depth-card">
+        <div className="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-white/50">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">Landing Page Editor</h2>
-            <p className="text-sm text-slate-500">Customize how your public landing page looks</p>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Landing Page Editor</h2>
+            <p className="text-sm text-slate-500 font-medium">Customize how your public landing page looks</p>
           </div>
-          <Layout className="w-6 h-6 text-emerald-600" />
+          <div className="p-3 bg-emerald-50 rounded-2xl shadow-inner border border-emerald-100/50">
+            <Layout className="w-6 h-6 text-emerald-600" />
+          </div>
         </div>
         <div className="p-8 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1342,13 +1392,15 @@ export default function App() {
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+      <div className="bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-white/20 overflow-hidden depth-card mb-8">
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white/50">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">Login Screen Ad Manager</h2>
-            <p className="text-sm text-slate-500">Manage promotional content on the login screen</p>
+            <h2 className="text-xl font-black text-slate-900 tracking-tight">Login Screen Ad Manager</h2>
+            <p className="text-sm text-slate-500 font-medium">Manage promotional content on the login screen</p>
           </div>
-          <Megaphone className="w-6 h-6 text-emerald-600" />
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-sm">
+            <Megaphone className="w-6 h-6" />
+          </div>
         </div>
         <div className="p-8 space-y-6">
           <div className="flex items-center gap-4 mb-4">
@@ -1508,10 +1560,10 @@ export default function App() {
         </div>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end mt-8">
         <button 
-          onClick={() => showToast('CMS configurations saved successfully!')}
-          className="bg-emerald-600 text-white px-8 py-3 rounded-xl text-sm font-bold shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all"
+          onClick={() => showToast('CMS configurations saved successfully!', 'success')}
+          className="neo-button-primary px-10 py-4 rounded-2xl text-base font-black shadow-xl"
         >
           Save All Changes
         </button>
@@ -1528,27 +1580,27 @@ export default function App() {
 
     return (
       <div className="space-y-6">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="p-4 md:p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-white/20 overflow-hidden depth-card">
+          <div className="p-6 md:p-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white/50">
             <div className="space-y-1">
-              <h2 className="text-xl font-bold">Tenant Management</h2>
-              <p className="text-sm text-slate-500">Manage multi-industry business accounts</p>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Tenant Management</h2>
+              <p className="text-sm text-slate-500 font-medium">Manage multi-industry business accounts</p>
             </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
               <button 
                 onClick={() => setCurrentView('billing')}
-                className="text-sm font-bold text-emerald-600 hover:text-emerald-700 flex items-center justify-center gap-1"
+                className="text-sm font-black text-emerald-600 hover:text-emerald-700 flex items-center justify-center gap-2 px-4 py-2 rounded-xl hover:bg-emerald-50 transition-all"
               >
                 <CreditCard className="w-4 h-4" /> Billing Overview
               </button>
               <div className="relative flex-1">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input 
                   type="text" 
                   placeholder="Search tenants..." 
                   value={tenantSearchTerm}
                   onChange={(e) => setTenantSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 w-full md:w-64"
+                  className="pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 w-full md:w-64 shadow-inner"
                 />
               </div>
               <button 
@@ -1556,7 +1608,7 @@ export default function App() {
                   setEditingTenant(null);
                   setIsNewTenantModalOpen(true);
                 }}
-                className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors"
+                className="neo-button-primary px-6 py-3 rounded-2xl text-sm font-black flex items-center justify-center gap-2"
               >
                 <Plus className="w-4 h-4" /> New Tenant
               </button>
@@ -1573,31 +1625,35 @@ export default function App() {
                   <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredTenants.map(tenant => (
-                  <tr key={tenant.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600">
-                          <Building2 className="w-5 h-5" />
+              <tbody className="divide-y divide-slate-50">
+                {filteredTenants.map((tenant) => (
+                  <motion.tr 
+                    key={tenant.id} 
+                    whileHover={{ backgroundColor: "rgba(248, 250, 252, 0.8)", x: 4 }}
+                    className="group transition-all cursor-pointer"
+                  >
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center text-slate-600 shadow-sm group-hover:shadow-md transition-all">
+                          <Building2 className="w-6 h-6" />
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-slate-900">{tenant.name}</p>
-                          <p className="text-xs text-slate-500">{tenant.email}</p>
+                          <p className="text-sm font-black text-slate-900">{tenant.name}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{tenant.email}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-5">
                       <select 
                         value={tenant.plan}
                         onChange={(e) => {
                           setTenants(tenants.map(t => t.id === tenant.id ? { ...t, plan: e.target.value as any } : t));
-                          showToast(`Plan updated for ${tenant.name}`);
+                          showToast(`Plan updated for ${tenant.name}`, 'success');
                         }}
                         className={cn(
-                          "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border-none focus:ring-0 cursor-pointer",
-                          tenant.plan === 'enterprise' ? "bg-indigo-50 text-indigo-700" : 
-                          tenant.plan === 'pro' ? "bg-emerald-50 text-emerald-700" : "bg-blue-50 text-blue-700"
+                          "px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-none focus:ring-0 cursor-pointer shadow-sm",
+                          tenant.plan === 'enterprise' ? "bg-indigo-100 text-indigo-700" : 
+                          tenant.plan === 'pro' ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700"
                         )}
                       >
                         <option value="standard">Standard</option>
@@ -1605,43 +1661,32 @@ export default function App() {
                         <option value="enterprise">Enterprise</option>
                       </select>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-500 font-mono">{tenant.gstin}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <span className={cn(
-                          "w-2 h-2 rounded-full",
-                          tenant.status === 'active' ? "bg-emerald-500" : "bg-slate-300"
-                        )} />
-                        <span className="text-sm text-slate-600 capitalize">{tenant.status}</span>
-                      </div>
+                    <td className="px-6 py-5 text-sm font-bold text-slate-500 font-mono">{tenant.gstin}</td>
+                    <td className="px-6 py-5">
+                      <span className={cn(
+                        "px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm",
+                        tenant.status === 'active' ? "bg-emerald-100 text-emerald-700 border border-emerald-200/50" : "bg-rose-100 text-rose-700 border border-rose-200/50"
+                      )}>
+                        {tenant.status}
+                      </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
+                    <td className="px-6 py-5 text-right">
+                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
                         <button 
                           onClick={() => setActiveTenantId(tenant.id)}
                           className={cn(
-                            "text-xs font-bold px-3 py-1.5 rounded-lg transition-all",
-                            activeTenantId === tenant.id ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                            "text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl transition-all shadow-sm active:scale-90",
+                            activeTenantId === tenant.id ? "bg-emerald-600 text-white shadow-emerald-200" : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-100"
                           )}
                         >
                           {activeTenantId === tenant.id ? 'Active' : 'Switch'}
                         </button>
                         <button 
                           onClick={() => {
-                            const password = Math.random().toString(36).slice(-8);
-                            alert(`User created for ${tenant.name}\nEmail: ${tenant.email}\nPassword: ${password}\n\n(In a real app, this would be sent via email)`);
-                          }}
-                          className="p-2 text-slate-400 hover:text-emerald-600 transition-colors"
-                          title="Create User Credentials"
-                        >
-                          <Key className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => {
                             setEditingTenant(tenant);
                             setIsNewTenantModalOpen(true);
                           }}
-                          className="p-2 text-slate-400 hover:text-primary transition-colors"
+                          className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-emerald-600 transition-all shadow-sm border border-transparent hover:border-emerald-100 active:scale-90"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
@@ -1652,13 +1697,13 @@ export default function App() {
                               showToast('Tenant deleted successfully');
                             }
                           }}
-                          className="p-2 text-slate-400 hover:text-rose-600 transition-colors"
+                          className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-rose-600 transition-all shadow-sm border border-transparent hover:border-rose-100 active:scale-90"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))}
               </tbody>
             </table>
@@ -1694,10 +1739,13 @@ export default function App() {
         />
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-4 md:p-6 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <h2 className="text-xl font-bold">Tenant Billing Plans</h2>
-          <button className="text-sm font-bold text-emerald-600 hover:text-emerald-700">View All Invoices</button>
+      <div className="bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-white/20 overflow-hidden depth-card">
+        <div className="p-6 md:p-8 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-6 bg-white/50">
+          <div>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Tenant Billing Plans</h2>
+            <p className="text-sm text-slate-500 font-medium">Manage subscriptions and invoices</p>
+          </div>
+          <button className="text-sm font-black text-emerald-600 hover:text-emerald-700 px-4 py-2 rounded-xl hover:bg-emerald-50 transition-all">View All Invoices</button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -1711,33 +1759,40 @@ export default function App() {
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {tenants.map(tenant => (
-                <tr key={tenant.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-4">
-                    <p className="text-sm font-bold text-slate-900">{tenant.name}</p>
+            <tbody className="divide-y divide-slate-50">
+              {tenants.map((tenant) => (
+                <motion.tr 
+                  key={tenant.id} 
+                  whileHover={{ backgroundColor: "rgba(248, 250, 252, 0.8)", x: 4 }}
+                  className="group transition-all cursor-pointer"
+                >
+                  <td className="px-6 py-5">
+                    <p className="text-sm font-black text-slate-900">{tenant.name}</p>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-5">
                     <span className={cn(
-                      "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                      tenant.plan === 'enterprise' ? "bg-indigo-50 text-indigo-700" : 
-                      tenant.plan === 'pro' ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-700"
+                      "px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm",
+                      tenant.plan === 'enterprise' ? "bg-indigo-100 text-indigo-700 border border-indigo-200/50" : 
+                      tenant.plan === 'pro' ? "bg-emerald-100 text-emerald-700 border border-emerald-200/50" : 
+                      "bg-slate-100 text-slate-700 border border-slate-200/50"
                     )}>
                       {tenant.plan}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-600 capitalize">{tenant.billingCycle || 'N/A'}</td>
-                  <td className="px-6 py-4 text-sm text-slate-600">{tenant.nextBillingDate || 'N/A'}</td>
-                  <td className="px-6 py-4 text-sm font-bold text-slate-900">{tenant.amount ? formatCurrency(tenant.amount) : '-'}</td>
-                  <td className="px-6 py-4">
-                    <button 
-                      onClick={() => setIsPricingModalOpen(true)}
-                      className="text-xs font-bold text-emerald-600 hover:underline"
-                    >
-                      Manage Plan
-                    </button>
+                  <td className="px-6 py-5 text-sm font-bold text-slate-600 capitalize tracking-tight">{tenant.billingCycle || 'N/A'}</td>
+                  <td className="px-6 py-5 text-sm font-bold text-slate-500">{tenant.nextBillingDate || 'N/A'}</td>
+                  <td className="px-6 py-5 text-sm font-black text-slate-900">{tenant.amount ? formatCurrency(tenant.amount) : '-'}</td>
+                  <td className="px-6 py-5 text-right">
+                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                      <button 
+                        onClick={() => setIsPricingModalOpen(true)}
+                        className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-emerald-600 transition-all shadow-sm border border-transparent hover:border-emerald-100 active:scale-90"
+                      >
+                        <CreditCard className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
-                </tr>
+                </motion.tr>
               ))}
             </tbody>
           </table>
@@ -1747,16 +1802,19 @@ export default function App() {
   );
 
   const renderInventory = () => (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-      <div className="p-4 md:p-6 border-bottom border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h2 className="text-xl font-bold">Inventory</h2>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+    <div className="bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-white/20 overflow-hidden depth-card">
+      <div className="p-6 md:p-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white/50">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Inventory</h2>
+          <p className="text-sm text-slate-500 font-medium">Track your products and stock levels</p>
+        </div>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
               placeholder="Search products..." 
-              className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 w-full md:w-64"
+              className="pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 w-full md:w-72 shadow-inner"
             />
           </div>
           <button 
@@ -1766,7 +1824,7 @@ export default function App() {
                 setIsNewProductModalOpen(true);
               }
             }}
-            className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors"
+            className="neo-button-primary px-6 py-3 rounded-2xl text-sm font-black flex items-center justify-center gap-2"
           >
             <Plus className="w-4 h-4" /> Add Product
           </button>
@@ -1785,43 +1843,64 @@ export default function App() {
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
-            {products.map(product => (
-              <tr key={product.id} className="hover:bg-slate-50/50 transition-colors">
-                <td className="px-6 py-4 text-sm font-medium text-slate-900">{product.name}</td>
-                <td className="px-6 py-4 text-sm text-slate-500">{product.sku}</td>
-                <td className="px-6 py-4 text-sm text-slate-500">{product.hsnCode}</td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <span className={cn(
-                      "w-2 h-2 rounded-full",
-                      product.stock > 20 ? "bg-emerald-500" : product.stock > 10 ? "bg-amber-500" : "bg-rose-500"
-                    )} />
-                    <span className="text-sm text-slate-600">{product.stock} {product.unit}</span>
+          <tbody className="divide-y divide-slate-50">
+            {products.map((product) => (
+              <motion.tr 
+                key={product.id} 
+                whileHover={{ backgroundColor: "rgba(248, 250, 252, 0.8)", x: 4 }}
+                className="group transition-all cursor-pointer"
+              >
+                <td className="px-6 py-5">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm group-hover:shadow-md transition-all">
+                      <Package className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-black text-slate-900">{product.name}</div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{product.sku}</div>
+                    </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 text-sm font-semibold text-slate-900">{formatCurrency(product.price)}</td>
-                <td className="px-6 py-4 text-sm text-slate-500">{product.gstRate}%</td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-5">
+                  <span className="px-3 py-1 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-black tracking-wider uppercase">{product.sku}</span>
+                </td>
+                <td className="px-6 py-5 text-sm font-bold text-slate-500">{product.hsnCode}</td>
+                <td className="px-6 py-5">
                   <div className="flex items-center gap-2">
+                    <div className={cn(
+                      "w-2 h-2 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.1)]",
+                      product.stock > 20 ? "bg-emerald-500" : product.stock > 10 ? "bg-amber-500" : "bg-rose-500 animate-pulse"
+                    )} />
+                    <span className={cn(
+                      "text-sm font-black",
+                      product.stock <= 10 ? "text-rose-600" : "text-slate-700"
+                    )}>
+                      {product.stock} {product.unit}
+                    </span>
+                  </div>
+                </td>
+                <td className="px-6 py-5 text-sm font-black text-slate-900">{formatCurrency(product.price)}</td>
+                <td className="px-6 py-5 text-sm font-black text-slate-500">{product.gstRate}%</td>
+                <td className="px-6 py-5 text-right">
+                  <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
                     <button 
                       onClick={() => {
                         setEditingProduct(product);
                         setIsNewProductModalOpen(true);
                       }}
-                      className="p-2 text-slate-400 hover:text-primary transition-colors"
+                      className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-emerald-600 transition-all shadow-sm border border-transparent hover:border-emerald-100 active:scale-90"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button 
                       onClick={() => deleteProduct(product.id)}
-                      className="p-2 text-slate-400 hover:text-danger transition-colors"
+                      className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-rose-600 transition-all shadow-sm border border-transparent hover:border-rose-100 active:scale-90"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </td>
-              </tr>
+              </motion.tr>
             ))}
           </tbody>
         </table>
@@ -1831,15 +1910,15 @@ export default function App() {
 
   const renderSettings = () => (
     <div className="space-y-6">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-4 md:p-6 border-b border-slate-100 flex items-center justify-between">
+      <div className="bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-white/20 overflow-hidden depth-card">
+        <div className="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-white/50">
           <div>
-            <h2 className="text-xl font-bold">Admin Panel</h2>
-            <p className="text-sm text-slate-500">Manage your business profile and application settings</p>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Admin Panel</h2>
+            <p className="text-sm text-slate-500 font-medium">Manage your business profile and application settings</p>
           </div>
           {isAdmin && (
-            <div className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-              <ShieldCheck className="w-3 h-3" />
+            <div className="px-4 py-1.5 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm border border-emerald-200/50">
+              <ShieldCheck className="w-3.5 h-3.5" />
               Admin Access
             </div>
           )}
@@ -1853,101 +1932,109 @@ export default function App() {
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6">Business Profile</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="md:col-span-2 space-y-2">
-                    <label className="text-xs font-semibold text-slate-600">Business Logo (250x250)</label>
-                    <div className="flex items-center gap-4">
+                    <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Business Logo (250x250)</label>
+                    <div className="flex items-center gap-6 p-6 rounded-3xl bg-slate-50/50 border border-slate-100 shadow-inner">
                       {businessProfile.logo && (
-                        <img src={businessProfile.logo} alt="Logo" className="w-16 h-16 rounded-lg object-cover" />
+                        <div className="relative group">
+                          <img src={businessProfile.logo} alt="Logo" className="w-20 h-20 rounded-2xl object-cover shadow-md border-2 border-white ring-4 ring-slate-100/50" />
+                          <div className="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center">
+                            <Camera className="w-6 h-6 text-white" />
+                          </div>
+                        </div>
                       )}
-                      <input 
-                        type="file" 
-                        accept="image/*"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            try {
-                              showToast('Processing logo...', 'success');
-                              const reader = new FileReader();
-                              reader.onload = (event) => {
-                                const img = new Image();
-                                img.onload = async () => {
-                                  const canvas = document.createElement('canvas');
-                                  canvas.width = 250;
-                                  canvas.height = 250;
-                                  const ctx = canvas.getContext('2d');
-                                  ctx?.drawImage(img, 0, 0, 250, 250);
-                                  
-                                  canvas.toBlob(async (blob) => {
-                                    if (blob) {
-                                      const resizedFile = new File([blob], 'business-logo.png', { type: 'image/png' });
-                                      try {
-                                        showToast('Uploading logo...', 'success');
-                                        const bucket = resizedFile.type.startsWith('video/') ? 'videos' : 'images';
-                                        const url = await uploadFile(bucket, resizedFile);
-                                        setBusinessProfile({...businessProfile, logo: url});
-                                        showToast('Logo uploaded successfully');
-                                      } catch (uploadErr: any) {
-                                        console.error('Upload error:', uploadErr);
-                                        showToast(uploadErr.message || 'Failed to upload logo', 'error');
+                      <div className="flex-1">
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              try {
+                                showToast('Processing logo...', 'success');
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  const img = new Image();
+                                  img.onload = async () => {
+                                    const canvas = document.createElement('canvas');
+                                    canvas.width = 250;
+                                    canvas.height = 250;
+                                    const ctx = canvas.getContext('2d');
+                                    ctx?.drawImage(img, 0, 0, 250, 250);
+                                    
+                                    canvas.toBlob(async (blob) => {
+                                      if (blob) {
+                                        const resizedFile = new File([blob], 'business-logo.png', { type: 'image/png' });
+                                        try {
+                                          showToast('Uploading logo...', 'success');
+                                          const bucket = resizedFile.type.startsWith('video/') ? 'videos' : 'images';
+                                          const url = await uploadFile(bucket, resizedFile);
+                                          setBusinessProfile({...businessProfile, logo: url});
+                                          showToast('Logo uploaded successfully', 'success');
+                                        } catch (uploadErr: any) {
+                                          console.error('Upload error:', uploadErr);
+                                          showToast(uploadErr.message || 'Failed to upload logo', 'error');
+                                        }
                                       }
-                                    }
-                                  }, 'image/png');
+                                    }, 'image/png');
+                                  };
+                                  img.src = event.target?.result as string;
                                 };
-                                img.src = event.target?.result as string;
-                              };
-                              reader.readAsDataURL(file);
-                            } catch (err: any) {
-                              console.error('Processing error:', err);
-                              showToast('Failed to process logo', 'error');
+                                reader.readAsDataURL(file);
+                              } catch (err: any) {
+                                console.error('Processing error:', err);
+                                showToast('Failed to process logo', 'error');
+                              }
                             }
-                          }
-                        }}
-                        className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
-                      />
+                          }}
+                          className="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:tracking-widest file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 transition-all cursor-pointer"
+                        />
+                        <p className="mt-2 text-[10px] font-bold text-slate-400">PNG, JPG or GIF. Max 1MB.</p>
+                      </div>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-slate-600">Business Name</label>
+                    <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Business Name</label>
                     <input 
                       type="text" 
                       value={businessProfile.name}
                       onChange={(e) => setBusinessProfile({...businessProfile, name: e.target.value})}
-                      className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
+                      className="w-full px-5 py-3.5 rounded-2xl bg-white border border-slate-200 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-slate-900 shadow-sm"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-slate-600">GSTIN</label>
+                    <label className="text-xs font-black text-slate-500 uppercase tracking-wider">GSTIN</label>
                     <input 
                       type="text" 
                       value={businessProfile.gstin}
                       onChange={(e) => setBusinessProfile({...businessProfile, gstin: e.target.value})}
-                      className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-mono"
+                      className="w-full px-5 py-3.5 rounded-2xl bg-white border border-slate-200 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-mono font-bold text-slate-900 shadow-sm"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-slate-600">Email Address</label>
+                    <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Email Address</label>
                     <input 
                       type="email" 
                       value={businessProfile.email}
                       onChange={(e) => setBusinessProfile({...businessProfile, email: e.target.value})}
-                      className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
+                      className="w-full px-5 py-3.5 rounded-2xl bg-white border border-slate-200 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-slate-900 shadow-sm"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-slate-600">Phone Number</label>
+                    <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Phone Number</label>
                     <input 
                       type="text" 
                       value={businessProfile.phone}
                       onChange={(e) => setBusinessProfile({...businessProfile, phone: e.target.value})}
-                      className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm"
+                      className="w-full px-5 py-3.5 rounded-2xl bg-white border border-slate-200 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-slate-900 shadow-sm"
                     />
                   </div>
                   <div className="md:col-span-2 space-y-2">
-                    <label className="text-xs font-semibold text-slate-600">Business Address</label>
+                    <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Business Address</label>
                     <textarea 
                       rows={3}
                       value={businessProfile.address}
                       onChange={(e) => setBusinessProfile({...businessProfile, address: e.target.value})}
-                      className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm resize-none"
+                      className="w-full px-5 py-3.5 rounded-2xl bg-white border border-slate-200 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-slate-900 shadow-sm resize-none"
                     />
                   </div>
                 </div>
@@ -2227,12 +2314,12 @@ export default function App() {
           />
         </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <h3 className="text-lg font-semibold mb-6">Sales by Category</h3>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%" minHeight={300}>
-              <PieChart>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="bg-white/80 backdrop-blur-sm p-8 rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-white/20 depth-card">
+            <h3 className="text-xl font-black text-slate-900 mb-8 tracking-tight">Sales by Category</h3>
+            <div className="h-[350px]">
+              <ResponsiveContainer width="100%" height="100%" minHeight={350}>
+                <PieChart>
                 <Pie
                   data={salesByCategory}
                   cx="50%"
@@ -2260,32 +2347,35 @@ export default function App() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <h3 className="text-lg font-semibold mb-6">Monthly GST Report</h3>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%" minHeight={300}>
+        <div className="bg-white/80 backdrop-blur-sm p-8 rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-white/20 depth-card">
+          <h3 className="text-xl font-black text-slate-900 mb-8 tracking-tight">Monthly GST Report</h3>
+          <div className="h-[350px]">
+            <ResponsiveContainer width="100%" height="100%" minHeight={350}>
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
                 <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
                 <Tooltip 
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', backdropFilter: 'blur(8px)', background: 'rgba(255, 255, 255, 0.8)' }}
                 />
-                <Bar dataKey="sales" fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="sales" fill="#10b981" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Available Reports</h3>
+      <div className="bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-white/20 overflow-hidden depth-card">
+        <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-white/50">
+          <div>
+            <h3 className="text-xl font-black text-slate-900 tracking-tight">Available Reports</h3>
+            <p className="text-sm text-slate-500 font-medium">Download and export your data</p>
+          </div>
           <button 
             onClick={() => downloadReport('Consolidated Reports')}
-            className="text-sm font-bold text-emerald-600 hover:text-emerald-700"
+            className="neo-button-primary px-6 py-3 rounded-2xl text-sm font-black flex items-center gap-2"
           >
-            Export All
+            <Download className="w-4 h-4" /> Export All
           </button>
         </div>
         <div className="divide-y divide-slate-100">
@@ -2358,24 +2448,25 @@ export default function App() {
     const getDurationLabel = () => '/ year';
 
     return (
-      <div className="space-y-8 max-w-7xl mx-auto py-4">
+      <div className="space-y-12 max-w-7xl mx-auto py-8">
         <div className="text-center space-y-4">
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900">Choose the right plan for your business</h2>
-          <p className="text-slate-500 max-w-2xl mx-auto">
+          <h2 className="text-4xl font-black tracking-tight text-slate-900">Choose the right plan for your business</h2>
+          <p className="text-lg text-slate-500 max-w-2xl mx-auto font-medium">
             Scale your billing operations with Johar Billing. Choose a plan that fits your current needs and upgrade as you grow.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {plans.map((plan) => (
-            <div 
+            <motion.div 
               key={plan.name}
+              whileHover={{ y: -10, scale: 1.02 }}
               className={cn(
-                "relative rounded-3xl border border-slate-100 p-8 flex flex-col h-full transition-all hover:shadow-xl hover:-translate-y-1",
-                plan.name === 'Standard' && "bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200",
-                plan.name === 'Pro' && "bg-gradient-to-br from-amber-100 to-amber-200 border-amber-300",
-                plan.name === 'Enterprise' && "bg-gradient-to-br from-sky-100 to-blue-200 border-blue-300",
-                plan.popular ? "shadow-lg ring-1 ring-emerald-500/20" : ""
+                "relative rounded-[2.5rem] border p-10 flex flex-col h-full transition-all duration-500 depth-card backdrop-blur-md",
+                plan.name === 'Standard' && "bg-gradient-to-br from-blue-50/90 to-blue-100/90 border-blue-200/50 shadow-[0_20px_40px_-12px_rgba(59,130,246,0.2)]",
+                plan.name === 'Pro' && "bg-gradient-to-br from-amber-100/90 to-amber-200/90 border-amber-300/50 shadow-[0_20px_40px_-12px_rgba(245,158,11,0.2)]",
+                plan.name === 'Enterprise' && "bg-gradient-to-br from-sky-100/90 to-blue-200/90 border-blue-300/50 shadow-[0_20px_40px_-12px_rgba(14,165,233,0.2)]",
+                plan.popular ? "ring-2 ring-emerald-500/30 scale-105 z-10" : ""
               )}
             >
               {plan.popular && (
@@ -2425,7 +2516,7 @@ export default function App() {
               >
                 {plan.buttonText}
               </button>
-            </div>
+            </motion.div>
           ))}
         </div>
 
@@ -2488,7 +2579,8 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 relative">
+    <div className="min-h-screen flex flex-col bg-slate-50 relative overflow-hidden">
+      <Interactive3DBackground />
       {showConfigWarning && (
         <div className="bg-amber-50 border-b border-amber-200 p-3 text-amber-800 text-sm flex items-center justify-between z-[100]">
           <div className="flex items-center gap-2">
@@ -2518,21 +2610,29 @@ export default function App() {
 
       {/* Sidebar */}
       <aside className={cn(
-        "bg-primary text-white transition-all duration-300 flex flex-col fixed h-full z-[70] lg:z-50",
+        "bg-primary/90 backdrop-blur-2xl text-white transition-all duration-500 flex flex-col fixed h-full z-[70] lg:z-50 glass-card border-r border-white/10 shadow-[20px_0_50px_-10px_rgba(0,0,0,0.3)]",
         isSidebarOpen ? "w-64" : "w-20",
         "lg:translate-x-0",
         isMobileMenuOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0"
       )}>
-        <div className="p-6 flex items-center justify-between gap-3">
+        <div className="p-6 flex items-center justify-between gap-3 border-b border-white/5">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg" style={{ backgroundColor: appConfig.primaryColor }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-[0_8px_20px_-4px_rgba(0,0,0,0.5)] border border-white/10" style={{ backgroundColor: appConfig.primaryColor }}>
               {appConfig.logoUrl ? (
-                <img src={appConfig.logoUrl} alt="Logo" className="w-6 h-6 object-contain" referrerPolicy="no-referrer" />
+                <img src={appConfig.logoUrl} alt="Logo" className="w-7 h-7 object-contain" referrerPolicy="no-referrer" />
               ) : (
-                <ArrowUpRight className="w-5 h-5 text-white" />
+                <ArrowUpRight className="w-6 h-6 text-white" />
               )}
             </div>
-            {(isSidebarOpen || isMobileMenuOpen) && <h1 className="text-xl font-bold tracking-tight">{appConfig.appName}</h1>}
+            {(isSidebarOpen || isMobileMenuOpen) && (
+              <motion.h1 
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="text-xl font-black tracking-tighter"
+              >
+                {appConfig.appName}
+              </motion.h1>
+            )}
           </div>
           <button 
             onClick={() => setIsMobileMenuOpen(false)}
@@ -2607,15 +2707,15 @@ export default function App() {
         "ml-0"
       )}>
         {/* Header */}
-        <header className="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-4 md:px-8 sticky top-0 z-40">
+        <header className="h-20 bg-white/70 backdrop-blur-2xl border-b border-slate-100 flex items-center justify-between px-4 md:px-8 sticky top-0 z-40 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)]">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
+              className="lg:hidden p-2.5 text-slate-500 hover:bg-slate-100 rounded-xl transition-all active:scale-95 border border-transparent hover:border-slate-200"
             >
               <Menu className="w-6 h-6" />
             </button>
-            <h2 className="text-lg font-semibold text-slate-800 capitalize">{currentView}</h2>
+            <h2 className="text-xl font-black text-slate-900 capitalize tracking-tight">{currentView}</h2>
           </div>
           
           <div className="flex items-center gap-3 md:gap-6">
@@ -3329,42 +3429,61 @@ export default function App() {
 
 function NavItem({ icon, label, active, onClick, collapsed, primaryColor }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void, collapsed: boolean, primaryColor: string }) {
   return (
-    <button
+    <motion.button
+      whileHover={{ x: 4, scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
       onClick={onClick}
       className={cn(
-        "w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200",
-        active ? "text-white shadow-lg" : "text-white/60 hover:bg-white/5 hover:text-white",
+        "w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200 relative group overflow-hidden",
+        active ? "text-white shadow-[0_10px_25px_-5px_rgba(0,0,0,0.3)]" : "text-white/60 hover:bg-white/5 hover:text-white",
         collapsed && "justify-center px-0"
       )}
-      style={active ? { backgroundColor: primaryColor, boxShadow: `0 10px 15px -3px ${primaryColor}33` } : {}}
+      style={active ? { backgroundColor: primaryColor, boxShadow: `0 10px 25px -5px ${primaryColor}66` } : {}}
     >
-      <span className="w-6 h-6 flex items-center justify-center">{icon}</span>
-      {!collapsed && <span className="text-sm font-medium">{label}</span>}
-    </button>
+      {active && (
+        <motion.div
+          layoutId="activeNav"
+          className="absolute inset-0 rounded-xl -z-10 bg-gradient-to-br from-white/20 to-transparent"
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        />
+      )}
+      <span className="w-6 h-6 flex items-center justify-center relative z-10 drop-shadow-md">{icon}</span>
+      {!collapsed && <span className="text-sm font-bold relative z-10 tracking-tight drop-shadow-sm">{label}</span>}
+      {!active && !collapsed && (
+        <div className="absolute right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+          <ChevronRight className="w-3 h-3" />
+        </div>
+      )}
+    </motion.button>
   );
 }
 
 function StatCard({ title, value, icon, trend, trendType }: { title: string, value: string, icon: React.ReactNode, trend: string, trendType: 'up' | 'down' }) {
   return (
     <motion.div 
-      whileHover={{ y: -5 }}
-      transition={{ duration: 0.2 }}
-      className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100"
+      whileHover={{ y: -12, scale: 1.03, rotateX: 2, rotateY: -2 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className="depth-card p-6 rounded-3xl relative overflow-hidden group preserve-3d"
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-600">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50/50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110 duration-500" />
+      <div className="flex items-center justify-between mb-6 relative z-10">
+        <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-slate-600 shadow-[0_8px_20px_-6px_rgba(0,0,0,0.1)] border border-slate-50 group-hover:scale-110 transition-transform duration-300">
           {icon}
         </div>
         <div className={cn(
-          "flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg",
-          trendType === 'up' ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
+          "flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm border",
+          trendType === 'up' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-rose-50 text-rose-600 border-rose-100"
         )}>
           {trendType === 'up' ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
           {trend}
         </div>
       </div>
-      <p className="text-sm text-slate-500 font-medium mb-1">{title}</p>
-      <h4 className="text-2xl font-bold text-slate-900">{value}</h4>
+      <div className="relative z-10">
+        <p className="text-sm text-slate-500 font-bold mb-1 tracking-tight uppercase opacity-70">{title}</p>
+        <h4 className="text-3xl font-black text-slate-900 tracking-tighter drop-shadow-sm">{value}</h4>
+      </div>
     </motion.div>
   );
 }
@@ -3923,68 +4042,71 @@ function PricingModal({ isOpen, onClose, onSelectPlan }: {
   ];
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xl">
       <motion.div 
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        initial={{ opacity: 0, scale: 0.9, y: 30 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-white w-full max-w-5xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="bg-white/90 backdrop-blur-2xl w-full max-w-5xl rounded-[3rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.3)] border border-white/20 overflow-hidden flex flex-col max-h-[90vh] depth-card"
       >
-        <div className="p-8 text-center bg-slate-50 border-b border-slate-100 relative">
+        <div className="p-10 text-center bg-white/50 border-b border-slate-100 relative">
           <button 
             onClick={onClose}
-            className="absolute right-6 top-6 p-2 hover:bg-white rounded-full transition-all text-slate-400 hover:text-slate-600"
+            className="absolute right-8 top-8 p-3 hover:bg-white rounded-2xl transition-all text-slate-400 hover:text-slate-600 shadow-sm border border-slate-100 active:scale-90"
           >
             <X className="w-6 h-6" />
           </button>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-bold uppercase tracking-wider mb-4">
-            <Sparkles className="w-3 h-3" /> Trial Limit Reached
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-widest mb-6 shadow-sm">
+            <Sparkles className="w-3.5 h-3.5" /> Trial Limit Reached
           </div>
-          <h2 className="text-3xl font-bold text-slate-900 mb-2">Upgrade to Continue Growing</h2>
-          <p className="text-slate-500 max-w-xl mx-auto">Choose a plan that fits your business needs. Unlock unlimited potential with Johar Billing.</p>
+          <h2 className="text-4xl font-black text-slate-900 mb-3 tracking-tight">Upgrade to Continue Growing</h2>
+          <p className="text-lg text-slate-500 max-w-xl mx-auto font-medium">Choose a plan that fits your business needs. Unlock unlimited potential with Johar Billing.</p>
         </div>
 
         <div className="flex-1 overflow-y-auto p-8 lg:p-12">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {plans.map((plan) => (
-              <div 
+              <motion.div 
                 key={plan.id}
+                whileHover={{ y: -10, scale: 1.02 }}
                 className={cn(
-                  "relative p-8 rounded-[2rem] border-2 transition-all flex flex-col",
-                  plan.popular ? "border-emerald-500 shadow-xl shadow-emerald-500/10 scale-105 z-10 bg-white" : "border-slate-100 hover:border-slate-200 bg-slate-50/50"
+                  "relative rounded-[2.5rem] border p-10 flex flex-col h-full transition-all duration-500 depth-card",
+                  plan.popular ? "bg-white shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] border-emerald-200 scale-105 z-10" : "bg-slate-50/50 border-slate-100"
                 )}
               >
                 {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-emerald-500 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">
+                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 px-6 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg">
                     Most Popular
                   </div>
                 )}
                 <div className="mb-8">
-                  <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
+                  <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">{plan.name}</h3>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                    <span className="text-slate-500 text-sm">{plan.duration}</span>
+                    <span className="text-4xl font-black text-slate-900">{plan.price}</span>
+                    <span className="text-slate-500 font-bold">{plan.duration}</span>
                   </div>
                 </div>
-                <div className="space-y-4 mb-10 flex-1">
-                  {plan.features.map((feature, i) => (
-                    <div key={i} className="flex items-start gap-3">
-                      <div className={cn("mt-1 p-0.5 rounded-full", plan.lightColor)}>
+                <div className="space-y-5 flex-1 mb-10">
+                  {plan.features.map((feature, idx) => (
+                    <div key={idx} className="flex items-start gap-3">
+                      <div className={cn("mt-1 p-0.5 rounded-full", plan.textColor, "bg-white shadow-sm")}>
                         <CheckCircle2 className="w-3.5 h-3.5" />
                       </div>
-                      <span className="text-sm text-slate-600">{feature}</span>
+                      <span className="text-sm text-slate-600 font-medium leading-tight">{feature}</span>
                     </div>
                   ))}
                 </div>
                 <button 
                   onClick={() => onSelectPlan(plan.id as any)}
                   className={cn(
-                    "w-full py-4 rounded-2xl text-sm font-bold transition-all active:scale-95 shadow-lg",
-                    plan.popular ? "bg-emerald-600 text-white shadow-emerald-600/20 hover:bg-emerald-700" : "bg-white text-slate-900 border border-slate-200 hover:bg-slate-50"
+                    "w-full py-5 rounded-2xl text-sm font-black transition-all active:scale-95 shadow-lg neo-button",
+                    plan.popular 
+                      ? "bg-emerald-600 text-white shadow-emerald-200 hover:bg-emerald-700 hover:-translate-y-1" 
+                      : "bg-white text-slate-900 border border-slate-200 hover:bg-slate-50 hover:-translate-y-1"
                   )}
                 >
                   Choose {plan.name}
                 </button>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>

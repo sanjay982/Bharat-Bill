@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { LogIn, Mail, Lock, AlertCircle, Loader2, ShieldCheck, ArrowUpRight, User } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../utils';
-import { SpaceBackground } from './SpaceBackground';
+import { Interactive3DBackground } from './Interactive3DBackground';
 
 import { LoginAdConfig } from '../types';
 
@@ -112,13 +112,14 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
 
   return (
     <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden bg-slate-950">
-      <SpaceBackground />
+      <Interactive3DBackground />
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className={cn(
-          "w-full bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-slate-900/50 border border-white/20 overflow-hidden flex flex-col md:flex-row relative z-10",
-          adConfig?.enabled ? "max-w-3xl" : "max-w-sm"
+          "w-full bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-slate-900/50 border border-white/20 overflow-hidden flex flex-col md:flex-row relative z-10 glass-card depth-card",
+          adConfig?.enabled ? "max-w-4xl" : "max-w-md"
         )}
       >
         {adConfig?.enabled && (
@@ -306,7 +307,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-bold py-3 rounded-xl shadow-lg shadow-emerald-200 transition-all flex items-center justify-center gap-2 group"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-bold py-3.5 rounded-2xl shadow-xl shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 group active:scale-95 neo-button"
             >
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />

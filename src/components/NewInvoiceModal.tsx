@@ -104,18 +104,20 @@ export function NewInvoiceModal({ isOpen, onClose, products, contacts, invoices,
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xl">
       <motion.div 
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="bg-white w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]"
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        className="bg-white/90 backdrop-blur-2xl w-full max-w-5xl rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.2)] border border-white/20 overflow-hidden flex flex-col max-h-[95vh] depth-card"
       >
-        <div className="p-4 md:p-6 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+        <div className="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-white/50 sticky top-0 z-10">
           <div>
-            <h3 className="text-lg md:text-xl font-bold text-slate-900">Create New Invoice</h3>
-            <p className="text-[10px] md:text-xs text-slate-500 font-medium">Generate a professional tax invoice</p>
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight">Create New Invoice</h3>
+            <p className="text-sm text-slate-500 font-medium">Generate a professional tax invoice</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X className="w-5 h-5 text-slate-400" /></button>
+          <button onClick={onClose} className="p-3 hover:bg-slate-100 rounded-2xl transition-all active:scale-90 shadow-sm border border-slate-100">
+            <X className="w-5 h-5 text-slate-400" />
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 md:space-y-8">
@@ -393,31 +395,31 @@ export function NewInvoiceModal({ isOpen, onClose, products, contacts, invoices,
           </div>
         </div>
 
-        <div className="p-4 md:p-8 bg-slate-50 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8 sticky bottom-0 z-10">
-          <div className="flex flex-wrap gap-4 md:gap-8 justify-center md:justify-start w-full md:w-auto">
+        <div className="p-6 md:p-8 bg-slate-50/80 backdrop-blur-md border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8 sticky bottom-0 z-10">
+          <div className="flex flex-wrap gap-6 md:gap-10 justify-center md:justify-start w-full md:w-auto">
             <div className="space-y-1 text-center md:text-left">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Subtotal</p>
-              <p className="text-lg md:text-xl font-bold text-slate-700">{formatCurrency(subtotal)}</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Subtotal</p>
+              <p className="text-xl md:text-2xl font-black text-slate-700">{formatCurrency(subtotal)}</p>
             </div>
             <div className="space-y-1 text-center md:text-left">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total GST</p>
-              <p className="text-lg md:text-xl font-bold text-slate-700">{formatCurrency(totalGst)}</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Total GST</p>
+              <p className="text-xl md:text-2xl font-black text-slate-700">{formatCurrency(totalGst)}</p>
             </div>
             <div className="space-y-1 text-center md:text-left">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Grand Total</p>
-              <p className="text-2xl md:text-3xl font-black text-emerald-600">{formatCurrency(totalAmount)}</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Grand Total</p>
+              <p className="text-3xl md:text-4xl font-black text-emerald-600 drop-shadow-sm">{formatCurrency(totalAmount)}</p>
             </div>
           </div>
-          <div className="flex gap-3 md:gap-4 w-full md:w-auto">
+          <div className="flex gap-4 w-full md:w-auto">
             <button 
               onClick={onClose}
-              className="flex-1 md:flex-none px-6 md:px-8 py-3 md:py-4 rounded-2xl text-sm font-bold text-slate-500 hover:bg-slate-200 transition-colors"
+              className="flex-1 md:flex-none px-8 py-4 rounded-2xl text-sm font-black text-slate-500 hover:bg-slate-200 transition-all active:scale-95"
             >
               Cancel
             </button>
             <button 
               onClick={handleSave}
-              className="flex-1 md:flex-none px-6 md:px-10 py-3 md:py-4 bg-emerald-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 hover:-translate-y-0.5 transition-all active:translate-y-0"
+              className="flex-1 md:flex-none px-12 py-4 bg-emerald-600 text-white rounded-2xl text-sm font-black shadow-[0_20px_40px_-12px_rgba(16,185,129,0.4)] hover:bg-emerald-700 hover:-translate-y-1 transition-all active:translate-y-0 active:scale-95"
             >
               Generate
             </button>
