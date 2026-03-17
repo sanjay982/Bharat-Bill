@@ -38,7 +38,7 @@ export const BirdsBackground: React.FC = () => {
         vx: (Math.random() - 0.5) * 4,
         vy: (Math.random() - 0.5) * 4,
         color: colors[Math.floor(Math.random() * colors.length)],
-        size: Math.random() * 3 + 4,
+        size: Math.random() * 6 + 8,
         targetX: mouseX,
         targetY: mouseY,
       });
