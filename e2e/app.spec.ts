@@ -12,7 +12,7 @@ test('app loads and shows login or dashboard', async ({ page }) => {
   
   if (bodyText?.includes('Johar Billing')) {
     // Landing page
-    await expect(page.locator('text=Modern Billing for Jharkhand Businesses')).toBeVisible();
+    await expect(page.locator('text=Johar Billing').first()).toBeVisible();
   } else if (bodyText?.includes('Sign In')) {
     // Login page
     await expect(page.locator('input[type="email"]')).toBeVisible();

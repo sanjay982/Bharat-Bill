@@ -1,0 +1,41 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e8]:
+  - generic [ref=e9]:
+    - img "Promotion" [ref=e10]
+    - generic:
+      - generic:
+        - img
+        - text: Special Offer
+      - heading "Upgrade to Pro Today!" [level=2]
+      - paragraph: Get unlimited invoices and advanced reports.
+  - generic [ref=e11]:
+    - generic [ref=e12]:
+      - img [ref=e14]
+      - heading "Johar Billing" [level=1] [ref=e17]
+      - paragraph [ref=e18]: Secure access to your dashboard
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - text: Email Address
+        - generic [ref=e21]:
+          - img [ref=e22]
+          - textbox "admin@example.com" [ref=e25]: sanju13july@gmail.com
+      - generic [ref=e26]:
+        - generic [ref=e27]:
+          - generic [ref=e28]: Password
+          - button "Forgot Password?" [ref=e29]
+        - generic [ref=e30]:
+          - img [ref=e31]
+          - textbox "••••••••" [ref=e34]: Admin
+      - generic [ref=e35]:
+        - img [ref=e36]
+        - generic [ref=e38]: Invalid login credentials
+      - button "Sign In" [ref=e39]:
+        - generic [ref=e40]: Sign In
+        - img [ref=e41]
+      - button "Don't have an account? Sign Up" [ref=e45]
+    - paragraph [ref=e47]:
+      - text: Only authorized personnel can access this system.
+      - text: Contact the administrator for access.
+```

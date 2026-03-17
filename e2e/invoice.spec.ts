@@ -9,9 +9,9 @@ test.describe('Invoice Management Flow', () => {
     // We use .first() because there might be multiple "Login" texts or buttons, 
     // but the nav button is usually first or we can target specific class if needed.
     // Better to target the specific button in the nav.
-    const navLoginButton = page.locator('nav button:has-text("Login")');
-    if (await navLoginButton.isVisible()) {
-      await navLoginButton.click();
+    const getStartedButton = page.locator('button:has-text("Get Started Free")');
+    if (await getStartedButton.isVisible()) {
+      await getStartedButton.click();
     }
 
     await page.fill('input[type="email"]', 'sanju13july@gmail.com');

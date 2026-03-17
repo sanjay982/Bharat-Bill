@@ -478,7 +478,7 @@ export default function App() {
     }
     return {
       primaryColor: '#10b981',
-      logoUrl: '',
+      logoUrl: '/johar-billing-banner.png',
       appName: 'Johar Billing',
       currency: 'INR',
       landingPage: {

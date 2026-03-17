@@ -6,9 +6,9 @@ test.describe('Tenant Management Flow', () => {
     await page.goto('/');
 
     // Check if landing page is visible and click Login
-    const navLoginButton = page.locator('nav button:has-text("Login")');
-    if (await navLoginButton.isVisible()) {
-      await navLoginButton.click();
+    const getStartedButton = page.locator('button:has-text("Get Started Free")');
+    if (await getStartedButton.isVisible()) {
+      await getStartedButton.click();
     }
 
     // 2. Log in using the admin bypass credentials

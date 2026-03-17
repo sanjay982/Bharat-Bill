@@ -3,6 +3,14 @@ import { vi, describe, it, expect } from 'vitest';
 import App from './App';
 
 // Mock Supabase
+vi.mock('@supabase/supabase-js', () => ({
+  createClient: vi.fn(() => ({
+    auth: {
+      signUp: vi.fn().mockResolvedValue({ data: { user: { id: 'test-user' } }, error: null }),
+    }
+  }))
+}));
+
 vi.mock('./lib/supabase', () => {
   const mockFrom = () => ({
     select: vi.fn().mockReturnThis(),
@@ -16,6 +24,8 @@ vi.mock('./lib/supabase', () => {
   });
 
   return {
+    supabaseUrl: 'https://test.supabase.co',
+    supabaseAnonKey: 'test-key',
     supabase: {
       auth: {
         getSession: vi.fn().mockResolvedValue({ 
@@ -30,6 +40,7 @@ vi.mock('./lib/supabase', () => {
         }),
         signOut: vi.fn(),
         signInWithPassword: vi.fn().mockResolvedValue({ data: { user: { id: 'test-user' } }, error: null }),
+        signUp: vi.fn().mockResolvedValue({ data: { user: { id: 'test-user' } }, error: null }),
       },
       from: vi.fn().mockImplementation(mockFrom),
     },
@@ -38,6 +49,13 @@ vi.mock('./lib/supabase', () => {
 
 // Mock window.confirm
 window.confirm = vi.fn(() => true);
+
+// Mock ResizeObserver
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
 
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {

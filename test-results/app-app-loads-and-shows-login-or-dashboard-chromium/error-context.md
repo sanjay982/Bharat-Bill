@@ -1,0 +1,521 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - navigation [ref=e8]:
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - img [ref=e12]
+        - generic [ref=e15]: Johar Billing
+      - generic [ref=e16]:
+        - link "Benefits" [ref=e17] [cursor=pointer]:
+          - /url: "#benefits"
+        - link "Features" [ref=e18] [cursor=pointer]:
+          - /url: "#features"
+        - link "Pricing" [ref=e19] [cursor=pointer]:
+          - /url: "#pricing"
+        - button "Login" [ref=e20]
+  - generic [ref=e23]:
+    - generic [ref=e24]:
+      - generic [ref=e27]: Trusted by 500+ Jharkhand Shops
+      - heading "M o d e r n B i l l i n g f o r Y o u r B u s i n e s s e s" [level=1] [ref=e28]:
+        - generic [ref=e29]:
+          - generic [ref=e30]:
+            - generic [ref=e32]:
+              - generic [ref=e33]: M
+              - generic [ref=e34]: o
+              - generic [ref=e35]: d
+              - generic [ref=e36]: e
+              - generic [ref=e37]: r
+              - generic [ref=e38]: "n"
+            - generic [ref=e40]:
+              - generic [ref=e41]: B
+              - generic [ref=e42]: i
+              - generic [ref=e43]: l
+              - generic [ref=e44]: l
+              - generic [ref=e45]: i
+              - generic [ref=e46]: "n"
+              - generic [ref=e47]: g
+            - generic [ref=e49]:
+              - generic [ref=e50]: f
+              - generic [ref=e51]: o
+              - generic [ref=e52]: r
+          - generic [ref=e53]:
+            - generic [ref=e55]:
+              - generic [ref=e56]: "Y"
+              - generic [ref=e57]: o
+              - generic [ref=e58]: u
+              - generic [ref=e59]: r
+            - generic [ref=e61]:
+              - generic [ref=e62]: B
+              - generic [ref=e63]: u
+              - generic [ref=e64]: s
+              - generic [ref=e65]: i
+              - generic [ref=e66]: "n"
+              - generic [ref=e67]: e
+              - generic [ref=e68]: s
+              - generic [ref=e69]: s
+              - generic [ref=e70]: e
+              - generic [ref=e71]: s
+      - paragraph [ref=e72]: The most powerful GST billing and inventory management system designed specifically for kirana stores, retail shops, and small businesses.
+      - generic [ref=e73]:
+        - button "Get Started Free" [ref=e74]:
+          - text: Get Started Free
+          - img [ref=e75]
+        - button "Watch Demo" [ref=e77]:
+          - img [ref=e79]
+          - text: Watch Demo
+      - generic [ref=e81]:
+        - generic [ref=e82]:
+          - img "User" [ref=e83]
+          - img "User" [ref=e84]
+          - img "User" [ref=e85]
+          - img "User" [ref=e86]
+        - paragraph [ref=e87]: Join 2,000+ shop owners growing with us
+    - generic [ref=e90]:
+      - img "Happy shopkeeper doing billing" [ref=e91]
+      - generic [ref=e93]:
+        - img [ref=e95]
+        - generic [ref=e98]:
+          - paragraph [ref=e99]: Monthly Sales
+          - paragraph [ref=e100]: ₹4,52,000
+  - generic [ref=e104]:
+    - generic [ref=e105]:
+      - heading "Why Choose Us" [level=2] [ref=e106]
+      - heading "E v e r y t h i n g y o u n e e d t o r u n y o u r s h o p e f f i c i e n t l y" [level=3] [ref=e107]:
+        - generic [ref=e108]:
+          - generic [ref=e109]: E
+          - generic [ref=e110]: v
+          - generic [ref=e111]: e
+          - generic [ref=e112]: r
+          - generic [ref=e113]: "y"
+          - generic [ref=e114]: t
+          - generic [ref=e115]: h
+          - generic [ref=e116]: i
+          - generic [ref=e117]: "n"
+          - generic [ref=e118]: g
+          - generic [ref=e120]: "y"
+          - generic [ref=e121]: o
+          - generic [ref=e122]: u
+          - generic [ref=e124]: "n"
+          - generic [ref=e125]: e
+          - generic [ref=e126]: e
+          - generic [ref=e127]: d
+          - generic [ref=e129]: t
+          - generic [ref=e130]: o
+          - generic [ref=e132]: r
+          - generic [ref=e133]: u
+          - generic [ref=e134]: "n"
+          - generic [ref=e136]: "y"
+          - generic [ref=e137]: o
+          - generic [ref=e138]: u
+          - generic [ref=e139]: r
+          - generic [ref=e141]: s
+          - generic [ref=e142]: h
+          - generic [ref=e143]: o
+          - generic [ref=e144]: p
+          - generic [ref=e146]: e
+          - generic [ref=e147]: f
+          - generic [ref=e148]: f
+          - generic [ref=e149]: i
+          - generic [ref=e150]: c
+          - generic [ref=e151]: i
+          - generic [ref=e152]: e
+          - generic [ref=e153]: "n"
+          - generic [ref=e154]: t
+          - generic [ref=e155]: l
+          - generic [ref=e156]: "y"
+      - paragraph [ref=e157]: Johar Billing is built to solve the real-world problems of small retailers in Jharkhand.
+    - generic [ref=e158]:
+      - generic [ref=e164]:
+        - img [ref=e166]
+        - heading "GST Ready Invoicing" [level=4] [ref=e169]
+        - paragraph [ref=e170]: Generate professional, GST-compliant invoices in seconds. Automatic tax calculations for CGST, SGST, and IGST.
+      - generic [ref=e177]:
+        - img [ref=e179]
+        - heading "Inventory Management" [level=4] [ref=e183]
+        - paragraph [ref=e184]: Keep track of your stock levels in real-time. Get low-stock alerts and manage product variants easily.
+      - generic [ref=e191]:
+        - img [ref=e193]
+        - heading "Sales Analytics" [level=4] [ref=e196]
+        - paragraph [ref=e197]: Visualize your business growth with beautiful charts. Track daily sales, expenses, and profit margins.
+      - generic [ref=e204]:
+        - img [ref=e206]
+        - heading "Multi-Business Support" [level=4] [ref=e210]
+        - paragraph [ref=e211]: Manage multiple shops or business entities from a single dashboard with our multi-tenant architecture.
+      - generic [ref=e218]:
+        - img [ref=e220]
+        - heading "Cloud Sync" [level=4] [ref=e222]
+        - paragraph [ref=e223]: Your data is securely stored in the cloud. Access your business information from anywhere, anytime.
+      - generic [ref=e230]:
+        - img [ref=e232]
+        - heading "Mobile Friendly" [level=4] [ref=e234]
+        - paragraph [ref=e235]: Fully responsive design that works perfectly on smartphones, tablets, and desktops.
+  - generic [ref=e238]:
+    - generic [ref=e239]:
+      - heading "Advanced Features" [level=2] [ref=e240]
+      - heading "P o w e r f u l t o o l s f o r y o u r b u s i n e s s g r o w t h" [level=3] [ref=e241]:
+        - generic [ref=e242]:
+          - generic [ref=e243]: P
+          - generic [ref=e244]: o
+          - generic [ref=e245]: w
+          - generic [ref=e246]: e
+          - generic [ref=e247]: r
+          - generic [ref=e248]: f
+          - generic [ref=e249]: u
+          - generic [ref=e250]: l
+          - generic [ref=e252]: t
+          - generic [ref=e253]: o
+          - generic [ref=e254]: o
+          - generic [ref=e255]: l
+          - generic [ref=e256]: s
+          - generic [ref=e258]: f
+          - generic [ref=e259]: o
+          - generic [ref=e260]: r
+          - generic [ref=e262]: "y"
+          - generic [ref=e263]: o
+          - generic [ref=e264]: u
+          - generic [ref=e265]: r
+          - generic [ref=e267]: b
+          - generic [ref=e268]: u
+          - generic [ref=e269]: s
+          - generic [ref=e270]: i
+          - generic [ref=e271]: "n"
+          - generic [ref=e272]: e
+          - generic [ref=e273]: s
+          - generic [ref=e274]: s
+          - generic [ref=e276]: g
+          - generic [ref=e277]: r
+          - generic [ref=e278]: o
+          - generic [ref=e279]: w
+          - generic [ref=e280]: t
+          - generic [ref=e281]: h
+      - paragraph [ref=e282]: Everything you need to manage your shop, from billing to inventory, all in one place.
+    - generic [ref=e283]:
+      - generic [ref=e289]:
+        - img [ref=e291]
+        - heading "Smart Invoicing" [level=4] [ref=e293]
+        - paragraph [ref=e294]: One-click invoice generation with automatic GST breakdown.
+      - generic [ref=e301]:
+        - img [ref=e303]
+        - heading "Expense Tracking" [level=4] [ref=e306]
+        - paragraph [ref=e307]: Monitor your spending and identify cost-saving opportunities.
+      - generic [ref=e314]:
+        - img [ref=e316]
+        - heading "Customer Portal" [level=4] [ref=e321]
+        - paragraph [ref=e322]: Give your customers a professional experience with digital receipts.
+      - generic [ref=e329]:
+        - img [ref=e331]
+        - heading "Mobile App" [level=4] [ref=e333]
+        - paragraph [ref=e334]: Manage your business on the go with our dedicated mobile app.
+      - generic [ref=e341]:
+        - img [ref=e343]
+        - heading "Inventory Alerts" [level=4] [ref=e347]
+        - paragraph [ref=e348]: Get notified when stock is low so you never run out of items.
+      - generic [ref=e355]:
+        - img [ref=e357]
+        - heading "Secure Backup" [level=4] [ref=e360]
+        - paragraph [ref=e361]: Your data is backed up daily with bank-grade encryption.
+  - generic [ref=e367]:
+    - generic [ref=e368]:
+      - heading "Pricing Plans" [level=2] [ref=e369]
+      - heading "S i m p l e , t r a n s p a r e n t p r i c i n g" [level=3] [ref=e370]:
+        - generic [ref=e371]:
+          - generic [ref=e372]: S
+          - generic [ref=e373]: i
+          - generic [ref=e374]: m
+          - generic [ref=e375]: p
+          - generic [ref=e376]: l
+          - generic [ref=e377]: e
+          - generic [ref=e378]: ","
+          - generic [ref=e380]: t
+          - generic [ref=e381]: r
+          - generic [ref=e382]: a
+          - generic [ref=e383]: "n"
+          - generic [ref=e384]: s
+          - generic [ref=e385]: p
+          - generic [ref=e386]: a
+          - generic [ref=e387]: r
+          - generic [ref=e388]: e
+          - generic [ref=e389]: "n"
+          - generic [ref=e390]: t
+          - generic [ref=e392]: p
+          - generic [ref=e393]: r
+          - generic [ref=e394]: i
+          - generic [ref=e395]: c
+          - generic [ref=e396]: i
+          - generic [ref=e397]: "n"
+          - generic [ref=e398]: g
+      - paragraph [ref=e399]: Choose the plan that's right for your business. No hidden fees.
+    - generic [ref=e400]:
+      - generic [ref=e406]:
+        - generic [ref=e407]:
+          - heading "Starter" [level=4] [ref=e408]
+          - paragraph [ref=e409]: Perfect for new shops starting their digital journey.
+        - generic [ref=e410]:
+          - generic [ref=e411]: ₹0
+          - generic [ref=e412]: /month
+        - list [ref=e413]:
+          - listitem [ref=e414]:
+            - img [ref=e415]
+            - generic [ref=e418]: 7-Day Free Trial
+          - listitem [ref=e419]:
+            - img [ref=e420]
+            - generic [ref=e423]: Up to 100 Invoices/mo
+          - listitem [ref=e424]:
+            - img [ref=e425]
+            - generic [ref=e428]: Basic Inventory
+          - listitem [ref=e429]:
+            - img [ref=e430]
+            - generic [ref=e433]: 1 Staff User
+        - button "Start Free Trial" [ref=e434]
+      - generic [ref=e441]:
+        - generic [ref=e442]: Most Popular
+        - generic [ref=e443]:
+          - heading "Standard" [level=4] [ref=e444]
+          - paragraph [ref=e445]: The most popular choice for growing retail businesses.
+        - generic [ref=e446]:
+          - generic [ref=e447]: ₹499
+          - generic [ref=e448]: /month
+        - list [ref=e449]:
+          - listitem [ref=e450]:
+            - img [ref=e451]
+            - generic [ref=e454]: Up to 1,000 Invoices/mo
+          - listitem [ref=e455]:
+            - img [ref=e456]
+            - generic [ref=e459]: Full Inventory Management
+          - listitem [ref=e460]:
+            - img [ref=e461]
+            - generic [ref=e464]: Up to 3 Staff Users
+          - listitem [ref=e465]:
+            - img [ref=e466]
+            - generic [ref=e469]: GST Reports & Filing Ready
+          - listitem [ref=e470]:
+            - img [ref=e471]
+            - generic [ref=e474]: WhatsApp Support
+          - listitem [ref=e475]:
+            - img [ref=e476]
+            - generic [ref=e479]: Mobile App Access
+        - button "Get Started" [ref=e480]
+      - generic [ref=e487]:
+        - generic [ref=e488]:
+          - heading "Enterprise" [level=4] [ref=e489]
+          - paragraph [ref=e490]: Advanced features for large shops and multiple branches.
+        - generic [ref=e491]:
+          - generic [ref=e492]: ₹999
+          - generic [ref=e493]: /month
+        - list [ref=e494]:
+          - listitem [ref=e495]:
+            - img [ref=e496]
+            - generic [ref=e499]: Everything in Standard
+          - listitem [ref=e500]:
+            - img [ref=e501]
+            - generic [ref=e504]: Multi-Shop Support (3 Tenants)
+          - listitem [ref=e505]:
+            - img [ref=e506]
+            - generic [ref=e509]: Up to 10 Staff Users
+          - listitem [ref=e510]:
+            - img [ref=e511]
+            - generic [ref=e514]: Advanced Sales Analytics
+          - listitem [ref=e515]:
+            - img [ref=e516]
+            - generic [ref=e519]: Dedicated Account Manager
+          - listitem [ref=e520]:
+            - img [ref=e521]
+            - generic [ref=e524]: Custom Branding
+        - button "Contact Sales" [ref=e525]
+  - generic [ref=e528]:
+    - generic [ref=e529]:
+      - heading "Success Stories" [level=2] [ref=e530]
+      - heading "See how businesses are growing with Johar Billing" [level=3] [ref=e531]
+    - generic [ref=e532]:
+      - generic [ref=e538]:
+        - img "Ranchi Electronics" [ref=e540]
+        - generic [ref=e541]:
+          - heading "Ranchi Electronics" [level=4] [ref=e542]
+          - paragraph [ref=e543]: 30% Increase in Sales
+          - paragraph [ref=e544]: Streamlined their inventory and billing, leading to faster checkout times and happier customers.
+          - button "Read Case Study" [ref=e545]:
+            - text: Read Case Study
+            - img [ref=e546]
+      - generic [ref=e554]:
+        - img "Jamshedpur Mart" [ref=e556]
+        - generic [ref=e557]:
+          - heading "Jamshedpur Mart" [level=4] [ref=e558]
+          - paragraph [ref=e559]: 50% Less Inventory Loss
+          - paragraph [ref=e560]: Real-time stock tracking helped them identify and reduce wastage significantly.
+          - button "Read Case Study" [ref=e561]:
+            - text: Read Case Study
+            - img [ref=e562]
+      - generic [ref=e570]:
+        - img "Dhanbad Pharmacy" [ref=e572]
+        - generic [ref=e573]:
+          - heading "Dhanbad Pharmacy" [level=4] [ref=e574]
+          - paragraph [ref=e575]: Zero GST Errors
+          - paragraph [ref=e576]: Automated tax calculations ensured 100% compliance and stress-free filing.
+          - button "Read Case Study" [ref=e577]:
+            - text: Read Case Study
+            - img [ref=e578]
+  - generic [ref=e582]:
+    - generic [ref=e583]:
+      - heading "Testimonials" [level=2] [ref=e584]
+      - heading "Trusted by shop owners like you" [level=3] [ref=e585]
+    - generic [ref=e586]:
+      - generic [ref=e592]:
+        - img [ref=e594]
+        - generic [ref=e596]:
+          - img [ref=e597]
+          - img [ref=e599]
+          - img [ref=e601]
+          - img [ref=e603]
+          - img [ref=e605]
+        - paragraph [ref=e607]: "\"Johar Billing has completely transformed how I manage my shop. It's so easy to use, even my staff learned it in a day.\""
+        - generic [ref=e608]:
+          - img "Rajesh Kumar" [ref=e609]
+          - generic [ref=e610]:
+            - paragraph [ref=e611]: Rajesh Kumar
+            - paragraph [ref=e612]: Owner, Kumar General Store
+      - generic [ref=e619]:
+        - img [ref=e621]
+        - generic [ref=e623]:
+          - img [ref=e624]
+          - img [ref=e626]
+          - img [ref=e628]
+          - img [ref=e630]
+          - img [ref=e632]
+        - paragraph [ref=e634]: "\"The best part is the mobile app. I can check my sales from home. Highly recommended for every shopkeeper in Jharkhand.\""
+        - generic [ref=e635]:
+          - img "Amit Singh" [ref=e636]
+          - generic [ref=e637]:
+            - paragraph [ref=e638]: Amit Singh
+            - paragraph [ref=e639]: Director, Singh Hardware
+      - generic [ref=e646]:
+        - img [ref=e648]
+        - generic [ref=e650]:
+          - img [ref=e651]
+          - img [ref=e653]
+          - img [ref=e655]
+          - img [ref=e657]
+          - img [ref=e659]
+        - paragraph [ref=e661]: "\"Customer support is excellent. Whenever I have a doubt, they help me immediately. The GST reports are a lifesaver.\""
+        - generic [ref=e662]:
+          - img "Priya Sharma" [ref=e663]
+          - generic [ref=e664]:
+            - paragraph [ref=e665]: Priya Sharma
+            - paragraph [ref=e666]: Manager, Sharma Boutique
+  - generic [ref=e669]:
+    - generic [ref=e670]:
+      - heading "Industries" [level=2] [ref=e671]
+      - heading "Perfect for any business type" [level=3] [ref=e672]
+    - generic [ref=e673]:
+      - generic [ref=e679]:
+        - img [ref=e681]
+        - paragraph [ref=e685]: Retail Stores
+      - generic [ref=e692]:
+        - img [ref=e694]
+        - paragraph [ref=e696]: Electronics
+      - generic [ref=e703]:
+        - img [ref=e705]
+        - paragraph [ref=e708]: Pharmacy
+      - generic [ref=e715]:
+        - img [ref=e717]
+        - paragraph [ref=e720]: Services
+      - generic [ref=e727]:
+        - img [ref=e729]
+        - paragraph [ref=e733]: Wholesale
+      - generic [ref=e740]:
+        - img [ref=e742]
+        - paragraph [ref=e747]: Restaurants
+      - generic [ref=e754]:
+        - img [ref=e756]
+        - paragraph [ref=e759]: Supermarkets
+      - generic [ref=e766]:
+        - img [ref=e768]
+        - paragraph [ref=e770]: Hardware
+  - generic [ref=e773]:
+    - generic [ref=e774]:
+      - heading "FAQ" [level=2] [ref=e775]
+      - heading "Frequently Asked Questions" [level=3] [ref=e776]
+    - generic [ref=e777]:
+      - generic [ref=e778]:
+        - button "Is Johar Billing GST compliant?" [ref=e779]:
+          - text: Is Johar Billing GST compliant?
+          - img [ref=e780]
+        - generic [ref=e782]: Yes, our software is fully GST compliant. It automatically calculates CGST, SGST, and IGST based on your products and generates GST-ready invoices and reports.
+      - generic [ref=e783]:
+        - button "Can I use it offline?" [ref=e784]:
+          - text: Can I use it offline?
+          - img [ref=e785]
+        - generic [ref=e787]: Yes! Johar Billing works in a hybrid mode. You can continue billing even without internet, and your data will sync automatically when you're back online.
+      - generic [ref=e788]:
+        - button "Is there a mobile app available?" [ref=e789]:
+          - text: Is there a mobile app available?
+          - img [ref=e790]
+        - generic [ref=e792]: Absolutely. We have a dedicated mobile app for both Android and iOS, allowing you to manage your business from anywhere.
+      - generic [ref=e793]:
+        - button "How secure is my data?" [ref=e794]:
+          - text: How secure is my data?
+          - img [ref=e795]
+        - generic [ref=e797]: We use bank-grade encryption to protect your data. Your information is stored securely on cloud servers with regular backups.
+      - generic [ref=e798]:
+        - button "Do you offer support?" [ref=e799]:
+          - text: Do you offer support?
+          - img [ref=e800]
+        - generic [ref=e802]: Yes, we offer dedicated support via phone, email, and chat. Our team is available to help you with any questions or issues.
+  - generic [ref=e805]:
+    - generic [ref=e806]:
+      - heading "Contact Us" [level=2] [ref=e807]
+      - heading "Get in touch with our team" [level=3] [ref=e808]
+      - paragraph [ref=e809]: Have questions about Johar Billing? We're here to help. Fill out the form or reach out to us directly.
+      - generic [ref=e810]:
+        - generic [ref=e811]:
+          - img [ref=e813]
+          - generic [ref=e816]:
+            - heading "Visit Us" [level=4] [ref=e817]
+            - paragraph [ref=e818]: 123 Main Road, Ranchi, Jharkhand 834001
+        - generic [ref=e819]:
+          - img [ref=e821]
+          - generic [ref=e824]:
+            - heading "Email Us" [level=4] [ref=e825]
+            - paragraph [ref=e826]: support@joharbilling.com
+        - generic [ref=e827]:
+          - img [ref=e829]
+          - generic [ref=e831]:
+            - heading "Call Us" [level=4] [ref=e832]
+            - paragraph [ref=e833]: +91 98765 43210
+    - generic [ref=e835]:
+      - generic [ref=e836]:
+        - generic [ref=e837]:
+          - text: First Name
+          - textbox "John" [ref=e838]
+        - generic [ref=e839]:
+          - text: Last Name
+          - textbox "Doe" [ref=e840]
+      - generic [ref=e841]:
+        - text: Email Address
+        - textbox "john@example.com" [ref=e842]
+      - generic [ref=e843]:
+        - text: Message
+        - textbox "How can we help you?" [ref=e844]
+      - button "Send Message" [ref=e845]:
+        - text: Send Message
+        - img [ref=e846]
+  - generic [ref=e854]:
+    - heading "Ready to transform your business?" [level=2] [ref=e855]
+    - paragraph [ref=e856]: Join thousands of successful shop owners in Jharkhand. Start your 7-day free trial today. No credit card required.
+    - generic [ref=e857]:
+      - button "Get Started Now" [ref=e858]
+      - generic [ref=e859]:
+        - img [ref=e860]
+        - generic [ref=e863]: Free setup assistance
+  - contentinfo [ref=e864]:
+    - generic [ref=e865]:
+      - generic [ref=e866]:
+        - img [ref=e868]
+        - generic [ref=e871]: Johar Billing
+      - paragraph [ref=e872]: © 2026 Johar Billing Solutions. All rights reserved. Mardibros
+      - generic [ref=e873]:
+        - button "Privacy Policy" [ref=e874]
+        - button "Terms of Service" [ref=e875]
+        - button "Refund Policy" [ref=e876]
+```
