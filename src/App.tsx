@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { uploadFile } from './lib/storage';
+import { uploadFile, checkBuckets } from './lib/storage';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -50,6 +50,7 @@ import {
   MessageSquare,
   CheckCircle2
 } from 'lucide-react';
+import { Interactive3DBackground } from './components/Interactive3DBackground';
 import { NewUserModal } from './components/NewUserModal';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -188,6 +189,13 @@ export default function App() {
   const [showLanding, setShowLanding] = useState(true);
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
   const [currentView, setCurrentView] = useState<View>('dashboard');
+  const [showConfigWarning, setShowConfigWarning] = useState(false);
+
+  useEffect(() => {
+    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      setShowConfigWarning(true);
+    }
+  }, []);
   const [billingDuration, setBillingDuration] = useState<'monthly' | 'quarterly' | 'half-yearly' | 'yearly'>('monthly');
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -259,12 +267,18 @@ export default function App() {
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        const tenantId = session.user.user_metadata?.tenant_id || '1';
-        setActiveTenantId(tenantId);
-        fetchData(session.user.id, tenantId);
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error && error.message.includes('Refresh Token Not Found')) {
+        console.warn('Refresh token not found, signing out.');
+        supabase.auth.signOut();
+        setUser(null);
+      } else {
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          const tenantId = session.user.user_metadata?.tenant_id || '1';
+          setActiveTenantId(tenantId);
+          fetchData(session.user.id, tenantId);
+        }
       }
       setAuthLoading(false);
     });
@@ -1867,7 +1881,8 @@ export default function App() {
                                       const resizedFile = new File([blob], 'business-logo.png', { type: 'image/png' });
                                       try {
                                         showToast('Uploading logo...', 'success');
-                                        const url = await uploadFile('images', resizedFile);
+                                        const bucket = resizedFile.type.startsWith('video/') ? 'videos' : 'images';
+                                        const url = await uploadFile(bucket, resizedFile);
                                         setBusinessProfile({...businessProfile, logo: url});
                                         showToast('Logo uploaded successfully');
                                       } catch (uploadErr: any) {
@@ -2008,7 +2023,8 @@ export default function App() {
                             if (file) {
                               try {
                                 showToast('Uploading app logo...', 'success');
-                                const url = await uploadFile('images', file);
+                                const bucket = file.type.startsWith('video/') ? 'videos' : 'images';
+                                const url = await uploadFile(bucket, file);
                                 setAppConfig({...appConfig, logoUrl: url});
                                 showToast('App logo uploaded successfully');
                               } catch (err: any) {
@@ -2472,19 +2488,33 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex bg-slate-50 relative">
-      {/* Mobile Sidebar Overlay */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] lg:hidden"
-          />
-        )}
-      </AnimatePresence>
+    <div className="min-h-screen flex flex-col bg-slate-50 relative">
+      {showConfigWarning && (
+        <div className="bg-amber-50 border-b border-amber-200 p-3 text-amber-800 text-sm flex items-center justify-between z-[100]">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4" />
+            <span>
+              <strong>Supabase not configured:</strong> Please set <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> in the Secrets menu to use your own project and storage.
+            </span>
+          </div>
+          <button onClick={() => setShowConfigWarning(false)} className="text-amber-500 hover:text-amber-700">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+      <div className="flex-1 flex relative">
+        {/* Mobile Sidebar Overlay */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] lg:hidden"
+            />
+          )}
+        </AnimatePresence>
 
       {/* Sidebar */}
       <aside className={cn(
@@ -3292,6 +3322,7 @@ export default function App() {
             showToast(`Successfully upgraded to ${plan} plan!`);
           }}
         />
+      </div>
     </div>
   );
 }

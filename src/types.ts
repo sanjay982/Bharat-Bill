@@ -120,7 +120,7 @@ export interface AppNotification {
   view?: View;
 }
 
-export type View = 'dashboard' | 'invoices' | 'quotations' | 'inventory' | 'customers' | 'vendors' | 'settings' | 'tenants' | 'billing' | 'plans' | 'notifications' | 'reports' | 'cms' | 'users';
+export type View = 'dashboard' | 'invoices' | 'quotations' | 'inventory' | 'customers' | 'vendors' | 'settings' | 'tenants' | 'billing' | 'plans' | 'notifications' | 'reports' | 'cms' | 'users' | 'purchases';
 
 export interface WorkspaceUser {
   id: string;

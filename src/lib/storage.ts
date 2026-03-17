@@ -1,6 +1,33 @@
 import { supabase } from './supabase';
 
 /**
+ * Checks if the required bucket exists and is accessible.
+ */
+export const checkBuckets = async (): Promise<Record<string, boolean>> => {
+  const bucketsToCheck = ['images', 'videos'];
+  const results: Record<string, boolean> = {};
+
+  // List all buckets to see what's available
+  const { data: allBuckets, error: listError } = await supabase.storage.listBuckets();
+  if (listError) {
+    console.error('Error listing buckets:', listError.message);
+  } else {
+    const bucketNames = allBuckets.map(b => b.name);
+    console.log('Available buckets in Supabase:', bucketNames);
+  }
+
+  for (const bucket of bucketsToCheck) {
+    const { data, error } = await supabase.storage.getBucket(bucket);
+    results[bucket] = !!data && !error;
+    if (error) {
+      console.warn(`Bucket check failed for '${bucket}':`, error.message);
+    }
+  }
+
+  return results;
+};
+
+/**
  * Uploads a file to a Supabase Storage bucket and returns the public URL.
  * @param bucket The name of the bucket (e.g., 'images', 'videos')
  * @param file The File object to upload
@@ -21,6 +48,8 @@ export const uploadFile = async (bucket: string, file: File): Promise<string> =>
   const filePath = `${fileName}`;
 
   // Upload the file to Supabase Storage
+  console.log(`Attempting to upload to bucket: "${bucket}"`);
+  
   const { data, error } = await supabase.storage
     .from(bucket)
     .upload(filePath, file, {
@@ -30,6 +59,14 @@ export const uploadFile = async (bucket: string, file: File): Promise<string> =>
 
   if (error) {
     console.error('Error uploading file:', error);
+    if (error.message.includes('Bucket not found')) {
+      const { data: allBuckets } = await supabase.storage.listBuckets();
+      const available = allBuckets?.map(b => b.name).join(', ') || 'none';
+      throw new Error(`Bucket "${bucket}" not found. Available buckets: ${available}. Please ensure the bucket is Public.`);
+    }
+    if (error.message.includes('row-level security policy')) {
+      throw new Error(`Upload failed: RLS Policy violation. You need to add an INSERT policy for the "${bucket}" bucket in Supabase -> Storage -> Policies.`);
+    }
     throw error;
   }
 

@@ -318,14 +318,6 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, adConfig }) => {
               )}
             </button>
 
-            <button
-              type="button"
-              onClick={() => onLoginSuccess({ email: 'bypass@admin.com', role: 'admin', id: 'bypass-user' })}
-              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 mt-2"
-            >
-              <span>Bypass Login</span>
-            </button>
-
             <div className="text-center">
               <button
                 type="button"
