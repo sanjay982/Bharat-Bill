@@ -10,6 +10,35 @@ export interface Product {
   tenantId?: string;
 }
 
+export interface Expense {
+  id: string;
+  tenantId: string;
+  description: string;
+  amount: number;
+  date: string;
+  category: string;
+  receiptUrl?: string;
+}
+
+export interface Payment {
+  id: string;
+  tenantId: string;
+  invoiceId: string;
+  amount: number;
+  paymentDate: string;
+  paymentMethod: 'cash' | 'card' | 'upi' | 'bank_transfer' | 'pos';
+  transactionId?: string;
+}
+
+export interface Receipt {
+  id: string;
+  tenantId: string;
+  imageUrl: string;
+  parsedData?: any;
+  status: 'pending' | 'processed' | 'failed';
+  createdAt: string;
+}
+
 export interface Contact {
   id: string;
   name: string;
@@ -120,7 +149,7 @@ export interface AppNotification {
   view?: View;
 }
 
-export type View = 'dashboard' | 'invoices' | 'quotations' | 'inventory' | 'customers' | 'vendors' | 'settings' | 'tenants' | 'billing' | 'plans' | 'notifications' | 'reports' | 'cms' | 'users' | 'purchases';
+export type View = 'dashboard' | 'invoices' | 'quotations' | 'inventory' | 'customers' | 'vendors' | 'settings' | 'tenants' | 'billing' | 'plans' | 'notifications' | 'reports' | 'cms' | 'users' | 'purchases' | 'expenses';
 
 export interface WorkspaceUser {
   id: string;
@@ -129,4 +158,14 @@ export interface WorkspaceUser {
   role: 'admin' | 'manager' | 'staff';
   status: 'active' | 'inactive';
   tenantId: string;
+}
+
+export interface BusinessProfile {
+  name: string;
+  gstin: string;
+  email: string;
+  phone: string;
+  address: string;
+  logo: string;
+  invoiceTemplateId?: string;
 }

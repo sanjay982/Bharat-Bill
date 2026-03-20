@@ -2,10 +2,23 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import { Resend } from 'resend';
 import dotenv from 'dotenv';
+import Stripe from 'stripe';
 
 dotenv.config();
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+let stripeClient: Stripe | null = null;
+
+function getStripe(): Stripe {
+  if (!stripeClient) {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) {
+      throw new Error('STRIPE_SECRET_KEY environment variable is required');
+    }
+    stripeClient = new Stripe(key, { apiVersion: '2026-02-25.clover' });
+  }
+  return stripeClient;
+}
 
 async function startServer() {
   const app = express();
@@ -40,6 +53,21 @@ async function startServer() {
     } catch (err) {
       console.error('Server error:', err);
       res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  app.post("/api/create-payment-intent", async (req, res) => {
+    const { amount, currency } = req.body;
+    try {
+      const stripe = getStripe();
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount,
+        currency: currency || 'inr',
+      });
+      res.json({ clientSecret: paymentIntent.client_secret });
+    } catch (err: any) {
+      console.error('Stripe error:', err);
+      res.status(500).json({ error: err.message });
     }
   });
 

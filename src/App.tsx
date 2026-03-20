@@ -70,13 +70,16 @@ import {
   Pie
 } from 'recharts';
 import { format } from 'date-fns';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import 'jspdf-autotable';
 import { createClient } from '@supabase/supabase-js';
 import { Product, Contact, Invoice, Quotation, View, InvoiceItem, Tenant, AppConfig, AppNotification, WorkspaceUser } from './types';
+import { InvoicePreviewModal } from './components/InvoicePreviewModal';
+import { RecordPaymentModal } from './components/RecordPaymentModal';
+import { templates } from './invoiceTemplates';
 import { cn, formatCurrency, calculateGST } from './utils';
 import { supabase, supabaseUrl, supabaseAnonKey } from './lib/supabase';
+import { StatCard } from './components/StatCard';
+const DashboardView = React.lazy(() => import('./views/DashboardView'));
+const ReportsView = React.lazy(() => import('./views/ReportsView'));
 import { NewQuotationModal } from './components/NewQuotationModal';
 import { NewInvoiceModal } from './components/NewInvoiceModal';
 import { Login } from './components/Login';
@@ -191,6 +194,10 @@ export default function App() {
   const [showLanding, setShowLanding] = useState(true);
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
   const [currentView, setCurrentView] = useState<View>('dashboard');
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
+  const [isRecordPaymentModalOpen, setIsRecordPaymentModalOpen] = useState(false);
+  const [invoiceToRecordPayment, setInvoiceToRecordPayment] = useState<Invoice | null>(null);
   const [showConfigWarning, setShowConfigWarning] = useState(false);
 
   useEffect(() => {
@@ -270,8 +277,8 @@ export default function App() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error && error.message.includes('Refresh Token Not Found')) {
-        console.warn('Refresh token not found, signing out.');
+      if (error) {
+        console.warn('Error getting session, signing out.', error);
         supabase.auth.signOut();
         setUser(null);
       } else {
@@ -509,43 +516,19 @@ export default function App() {
     email: 'contact@joharbilling.com',
     phone: '+91 98765 43210',
     address: '123 Business Park, Mumbai, Maharashtra, 400001',
-    logo: ''
+    logo: '',
+    invoiceTemplateId: 'modern-blue'
   });
 
-  const generatePDF = (invoice: Invoice, action: 'download' | 'print' = 'download') => {
+  const generatePDF = async (invoice: Invoice, action: 'download' | 'print' = 'download') => {
+    const { jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
     const doc = new jsPDF();
     const contact = contacts.find(c => c.id === invoice.contactId);
     
     // Header
-    doc.setFontSize(20);
-    const title = invoice.type === 'credit_note' ? 'CREDIT NOTE' : invoice.type === 'debit_note' ? 'DEBIT NOTE' : 'TAX INVOICE';
-    doc.text(title, 105, 20, { align: 'center' });
-    
-    doc.setFontSize(10);
-    doc.text(businessProfile.name, 20, 40);
-    doc.text(`GSTIN: ${businessProfile.gstin}`, 20, 45);
-    doc.text(businessProfile.address, 20, 50);
-    
-    const numberLabel = invoice.type === 'credit_note' ? 'Credit Note #' : invoice.type === 'debit_note' ? 'Debit Note #' : 'Invoice #';
-    doc.text(`${numberLabel}: ${invoice.invoiceNumber}`, 140, 40);
-    doc.text(`Date: ${format(new Date(invoice.date), 'dd/MM/yyyy')}`, 140, 45);
-    if (invoice.type === 'sale' || invoice.type === 'purchase') {
-      doc.text(`Due Date: ${format(new Date(invoice.dueDate), 'dd/MM/yyyy')}`, 140, 50);
-    }
-    if (invoice.originalInvoiceId) {
-      const originalInvoice = invoices.find(i => i.id === invoice.originalInvoiceId);
-      if (originalInvoice) {
-        doc.text(`Original Invoice #: ${originalInvoice.invoiceNumber}`, 140, 55);
-      }
-    }
-    
-    // Bill To
-    doc.setFontSize(12);
-    doc.text('Bill To:', 20, 70);
-    doc.setFontSize(10);
-    doc.text(contact?.name || 'Customer Name', 20, 75);
-    doc.text(contact?.address || 'Address', 20, 80);
-    doc.text(`GSTIN: ${contact?.gstin || 'N/A'}`, 20, 85);
+    const template = templates[businessProfile.invoiceTemplateId || 'modern-blue'];
+    template(doc, invoice, contact, businessProfile);
     
     // Table
     const tableData = invoice.items.map(item => [
@@ -558,7 +541,7 @@ export default function App() {
       formatCurrency(item.amount + item.gstAmount)
     ]);
     
-    autoTable(doc, {
+    (doc as any).autoTable({
       startY: 100,
       head: [['Product', 'HSN', 'Qty', 'Price', 'GST %', 'GST Amt', 'Total']],
       body: tableData,
@@ -582,7 +565,9 @@ export default function App() {
     }
   };
 
-  const generateQuotationPDF = (quotation: Quotation, action: 'download' | 'print' = 'download') => {
+  const generateQuotationPDF = async (quotation: Quotation, action: 'download' | 'print' = 'download') => {
+    const { jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
     const doc = new jsPDF();
     const contact = contacts.find(c => c.id === quotation.contactId);
     
@@ -1015,103 +1000,7 @@ export default function App() {
   const totalReceivables = invoices.filter(i => i.type === 'sale' && i.status === 'unpaid').reduce((acc, curr) => acc + curr.totalAmount, 0);
   const lowStockCount = products.filter(p => p.stock < 10).length;
 
-  const renderDashboard = () => (
-    <div className="space-y-6">
-      {/* Feedback Button */}
-      <div className="flex justify-end">
-        <button 
-          onClick={() => setIsFeedbackModalOpen(true)}
-          className="neo-button-primary px-6 py-3 rounded-2xl text-sm font-black flex items-center gap-2"
-        >
-          <MessageSquare className="w-4 h-4" />
-          Share Feedback
-        </button>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Sales" value={formatCurrency(totalSales)} icon={<IndianRupee className="w-5 h-5" />} trend="+12.5%" trendType="up" />
-        <StatCard title="Receivables" value={formatCurrency(totalReceivables)} icon={<CreditCard className="w-5 h-5" />} trend="-2.4%" trendType="down" />
-        <StatCard title="Low Stock Items" value={lowStockCount.toString()} icon={<Package className="w-5 h-5" />} trend="Critical" trendType="down" />
-        <StatCard title="Active Customers" value={contacts.filter(c => c.type === 'customer').length.toString()} icon={<Users className="w-5 h-5" />} trend="+5 new" trendType="up" />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="lg:col-span-2 bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-slate-100 depth-card"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold">Revenue Overview</h3>
-            <select className="bg-slate-50 border-none text-sm rounded-lg focus:ring-0">
-              <option>Last 6 Months</option>
-              <option>Last Year</option>
-            </select>
-          </div>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%" minHeight={300}>
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                />
-                <Area type="monotone" dataKey="sales" stroke="#10b981" fillOpacity={1} fill="url(#colorSales)" strokeWidth={2} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
-
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-slate-100 depth-card"
-        >
-          <h3 className="text-lg font-semibold mb-6">Recent Transactions</h3>
-          <div className="space-y-4">
-            {invoices.slice(0, 5).map(invoice => (
-              <div key={invoice.id} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center",
-                    invoice.status === 'paid' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
-                  )}>
-                    <FileText className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">{invoice.invoiceNumber}</p>
-                    <p className="text-xs text-slate-500">{format(new Date(invoice.date), 'dd MMM yyyy')}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold">{formatCurrency(invoice.totalAmount)}</p>
-                  <p className={cn(
-                    "text-[10px] uppercase tracking-wider font-bold",
-                    invoice.status === 'paid' ? "text-emerald-600" : "text-amber-600"
-                  )}>{invoice.status}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          <button 
-            onClick={() => setCurrentView('invoices')}
-            className="w-full mt-6 py-2 text-sm text-slate-500 hover:text-primary font-medium flex items-center justify-center gap-1"
-          >
-            View All Invoices <ChevronRight className="w-4 h-4" />
-          </button>
-        </motion.div>
-      </div>
-    </div>
-  );
 
   const renderQuotations = () => (
     <div className="bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-white/20 overflow-hidden depth-card">
@@ -1195,13 +1084,13 @@ export default function App() {
                       </button>
                     )}
                     <button 
-                      onClick={() => generateQuotationPDF(quotation, 'print')}
+                      onClick={async () => await generateQuotationPDF(quotation, 'print')}
                       className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-emerald-600 transition-all shadow-sm border border-transparent hover:border-emerald-100 active:scale-90"
                     >
                       <Printer className="w-4 h-4" />
                     </button>
                     <button 
-                      onClick={() => generateQuotationPDF(quotation, 'download')}
+                      onClick={async () => await generateQuotationPDF(quotation, 'download')}
                       className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-emerald-600 transition-all shadow-sm border border-transparent hover:border-emerald-100 active:scale-90"
                     >
                       <Download className="w-4 h-4" />
@@ -1300,23 +1189,47 @@ export default function App() {
                 <td className="px-6 py-5 text-sm font-bold text-slate-500">{format(new Date(invoice.date), 'dd MMM yyyy')}</td>
                 <td className="px-6 py-5 text-sm font-black text-slate-900">{formatCurrency(invoice.totalAmount)}</td>
                 <td className="px-6 py-5">
-                  <span className={cn(
-                    "px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm",
-                    invoice.status === 'paid' ? "bg-emerald-100 text-emerald-700 border border-emerald-200/50" : "bg-amber-100 text-amber-700 border border-amber-200/50"
-                  )}>
+                  <button 
+                    onClick={() => {
+                      if (invoice.status === 'paid') {
+                        // Toggle to unpaid
+                        const newStatus = 'unpaid';
+                        supabase
+                          .from('invoices')
+                          .update({ status: newStatus })
+                          .eq('id', invoice.id)
+                          .then(({ error }) => {
+                            if (error) {
+                              console.error('Error updating invoice status:', error);
+                              showToast(error.message || 'Failed to update invoice status', 'error');
+                            } else {
+                              setInvoices(invoices.map(inv => inv.id === invoice.id ? { ...inv, status: newStatus } : inv));
+                              showToast(`Invoice marked as ${newStatus}`);
+                            }
+                          });
+                      } else {
+                        setInvoiceToRecordPayment(invoice);
+                        setIsRecordPaymentModalOpen(true);
+                      }
+                    }}
+                    className={cn(
+                      "px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm transition-all hover:scale-105",
+                      invoice.status === 'paid' ? "bg-emerald-100 text-emerald-700 border border-emerald-200/50" : "bg-amber-100 text-amber-700 border border-amber-200/50"
+                    )}
+                  >
                     {invoice.status}
-                  </span>
+                  </button>
                 </td>
                 <td className="px-6 py-5 text-right">
                   <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
                     <button 
-                      onClick={() => generatePDF(invoice, 'print')}
+                      onClick={async () => await generatePDF(invoice, 'print')}
                       className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-emerald-600 transition-all shadow-sm border border-transparent hover:border-emerald-100 active:scale-90"
                     >
                       <Printer className="w-4 h-4" />
                     </button>
                     <button 
-                      onClick={() => generatePDF(invoice, 'download')}
+                      onClick={async () => await generatePDF(invoice, 'download')}
                       className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-emerald-600 transition-all shadow-sm border border-transparent hover:border-emerald-100 active:scale-90"
                     >
                       <Download className="w-4 h-4" />
@@ -1993,6 +1906,34 @@ export default function App() {
                     </div>
                   </div>
                   <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Invoice Template</label>
+                    <div className="flex gap-2">
+                      <select 
+                        value={businessProfile.invoiceTemplateId || 'modern-blue'}
+                        onChange={(e) => setBusinessProfile({...businessProfile, invoiceTemplateId: e.target.value})}
+                        className="flex-1 px-5 py-3.5 rounded-2xl bg-white border border-slate-200 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-slate-900 shadow-sm"
+                      >
+                        {Object.keys(templates).map(id => (
+                          <option key={id} value={id}>{id.replace('-', ' ').toUpperCase()}</option>
+                        ))}
+                      </select>
+                      <button 
+                        onClick={() => {
+                          const sampleInvoice = invoices[0];
+                          if (sampleInvoice) {
+                            setPreviewInvoice(sampleInvoice);
+                            setIsPreviewModalOpen(true);
+                          } else {
+                            showToast('No invoices available to preview', 'error');
+                          }
+                        }}
+                        className="px-5 py-3.5 rounded-2xl bg-slate-100 text-slate-700 font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all"
+                      >
+                        Preview
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
                     <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Business Name</label>
                     <input 
                       type="text" 
@@ -2284,132 +2225,10 @@ export default function App() {
   );
 
   const renderReports = () => {
-    const totalRevenue = invoices.filter(i => i.status === 'paid').reduce((sum, i) => sum + i.totalAmount, 0);
-    const totalGst = invoices.reduce((sum, i) => sum + i.totalGst, 0);
-    const outstandingAmount = invoices.filter(i => i.status !== 'paid').reduce((sum, i) => sum + i.totalAmount, 0);
-
     return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <StatCard 
-            title="Total Revenue" 
-            value={formatCurrency(totalRevenue)} 
-            icon={<TrendingUp className="w-5 h-5" />} 
-            trend="+18.2%" 
-            trendType="up" 
-          />
-          <StatCard 
-            title="Total GST Collected" 
-            value={formatCurrency(totalGst)} 
-            icon={<ShieldCheck className="w-5 h-5" />} 
-            trend="+15.4%" 
-            trendType="up" 
-          />
-          <StatCard 
-            title="Outstanding Amount" 
-            value={formatCurrency(outstandingAmount)} 
-            icon={<AlertTriangle className="w-5 h-5" />} 
-            trend="-5.2%" 
-            trendType="down" 
-          />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-white/80 backdrop-blur-sm p-8 rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-white/20 depth-card">
-            <h3 className="text-xl font-black text-slate-900 mb-8 tracking-tight">Sales by Category</h3>
-            <div className="h-[350px]">
-              <ResponsiveContainer width="100%" height="100%" minHeight={350}>
-                <PieChart>
-                <Pie
-                  data={salesByCategory}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {salesByCategory.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={[ '#10b981', '#3b82f6', '#f59e0b', '#ef4444' ][index % 4]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            {salesByCategory.map((cat, index) => (
-              <div key={cat.name} className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: [ '#10b981', '#3b82f6', '#f59e0b', '#ef4444' ][index % 4] }} />
-                <span className="text-sm text-slate-600">{cat.name} ({Math.round((cat.value / salesByCategory.reduce((sum, c) => sum + c.value, 0)) * 100)}%)</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white/80 backdrop-blur-sm p-8 rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-white/20 depth-card">
-          <h3 className="text-xl font-black text-slate-900 mb-8 tracking-tight">Monthly GST Report</h3>
-          <div className="h-[350px]">
-            <ResponsiveContainer width="100%" height="100%" minHeight={350}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', backdropFilter: 'blur(8px)', background: 'rgba(255, 255, 255, 0.8)' }}
-                />
-                <Bar dataKey="sales" fill="#10b981" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-white/20 overflow-hidden depth-card">
-        <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-white/50">
-          <div>
-            <h3 className="text-xl font-black text-slate-900 tracking-tight">Available Reports</h3>
-            <p className="text-sm text-slate-500 font-medium">Download and export your data</p>
-          </div>
-          <button 
-            onClick={() => downloadReport('Consolidated Reports')}
-            className="neo-button-primary px-6 py-3 rounded-2xl text-sm font-black flex items-center gap-2"
-          >
-            <Download className="w-4 h-4" /> Export All
-          </button>
-        </div>
-        <div className="divide-y divide-slate-100">
-          {[
-            { name: 'GSTR-1 Summary', description: 'Monthly outward supplies report for GST filing', type: 'GST' },
-            { name: 'GSTR-3B Details', description: 'Self-assessment monthly return summary', type: 'GST' },
-            { name: 'Profit & Loss Statement', description: 'Comprehensive financial performance overview', type: 'Finance' },
-            { name: 'Inventory Valuation', description: 'Current stock value and turnover ratio', type: 'Inventory' },
-            { name: 'Customer Aging Report', description: 'Outstanding payments grouped by duration', type: 'Receivables' }
-          ].map((report, i) => (
-            <div key={i} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between group">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-900">{report.name}</p>
-                  <p className="text-xs text-slate-500">{report.description}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 bg-slate-100 text-slate-500 rounded-md">{report.type}</span>
-                <button 
-                  onClick={() => downloadReport(report.name)}
-                  className="p-2 text-slate-400 hover:text-emerald-600 transition-colors"
-                >
-                  <Download className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+      <React.Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>}>
+        <ReportsView invoices={invoices} products={products} />
+      </React.Suspense>
     );
   };
 
@@ -2875,7 +2694,20 @@ export default function App() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
             >
-              {currentView === 'dashboard' && renderDashboard()}
+              {currentView === 'dashboard' && (
+                <React.Suspense fallback={<div className="p-8 text-center">Loading Dashboard...</div>}>
+                  <DashboardView 
+                    totalSales={totalSales}
+                    totalReceivables={totalReceivables}
+                    lowStockCount={lowStockCount}
+                    contacts={contacts}
+                    chartData={chartData}
+                    invoices={invoices}
+                    setCurrentView={setCurrentView}
+                    setIsFeedbackModalOpen={setIsFeedbackModalOpen}
+                  />
+                </React.Suspense>
+              )}
               {currentView === 'invoices' && renderInvoices()}
               {currentView === 'quotations' && renderQuotations()}
               {currentView === 'purchases' && <div className="p-8 text-center text-slate-500">Purchases module is under development.</div>}
@@ -3422,6 +3254,47 @@ export default function App() {
             showToast(`Successfully upgraded to ${plan} plan!`);
           }}
         />
+        {isRecordPaymentModalOpen && invoiceToRecordPayment && (
+          <RecordPaymentModal
+            isOpen={isRecordPaymentModalOpen}
+            onClose={() => setIsRecordPaymentModalOpen(false)}
+            invoice={invoiceToRecordPayment}
+            onSave={async (payment) => {
+              try {
+                // 1. Create payment record
+                const { error: paymentError } = await supabase
+                  .from('payments')
+                  .insert([{
+                    ...payment,
+                    tenantId: '1' // Assuming tenantId 1 for now
+                  }]);
+                if (paymentError) throw paymentError;
+
+                // 2. Update invoice status
+                const { error: invoiceError } = await supabase
+                  .from('invoices')
+                  .update({ status: 'paid' })
+                  .eq('id', invoiceToRecordPayment!.id);
+                if (invoiceError) throw invoiceError;
+
+                setInvoices(invoices.map(inv => inv.id === invoiceToRecordPayment!.id ? { ...inv, status: 'paid' } : inv));
+                showToast('Payment recorded successfully');
+              } catch (err: any) {
+                console.error('Error recording payment:', err);
+                showToast(err.message || 'Failed to record payment', 'error');
+              }
+            }}
+          />
+        )}
+        {previewInvoice && (
+          <InvoicePreviewModal
+            isOpen={isPreviewModalOpen}
+            onClose={() => setIsPreviewModalOpen(false)}
+            invoice={previewInvoice}
+            contact={contacts.find(c => c.id === previewInvoice.contactId)}
+            businessProfile={businessProfile}
+          />
+        )}
       </div>
     </div>
   );
@@ -3458,35 +3331,7 @@ function NavItem({ icon, label, active, onClick, collapsed, primaryColor }: { ic
   );
 }
 
-function StatCard({ title, value, icon, trend, trendType }: { title: string, value: string, icon: React.ReactNode, trend: string, trendType: 'up' | 'down' }) {
-  return (
-    <motion.div 
-      whileHover={{ y: -12, scale: 1.03, rotateX: 2, rotateY: -2 }}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className="depth-card p-6 rounded-3xl relative overflow-hidden group preserve-3d"
-    >
-      <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50/50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110 duration-500" />
-      <div className="flex items-center justify-between mb-6 relative z-10">
-        <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-slate-600 shadow-[0_8px_20px_-6px_rgba(0,0,0,0.1)] border border-slate-50 group-hover:scale-110 transition-transform duration-300">
-          {icon}
-        </div>
-        <div className={cn(
-          "flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm border",
-          trendType === 'up' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-rose-50 text-rose-600 border-rose-100"
-        )}>
-          {trendType === 'up' ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-          {trend}
-        </div>
-      </div>
-      <div className="relative z-10">
-        <p className="text-sm text-slate-500 font-bold mb-1 tracking-tight uppercase opacity-70">{title}</p>
-        <h4 className="text-3xl font-black text-slate-900 tracking-tighter drop-shadow-sm">{value}</h4>
-      </div>
-    </motion.div>
-  );
-}
+
 
 
 
@@ -4120,5 +3965,7 @@ function PricingModal({ isOpen, onClose, onSelectPlan }: {
     </div>
   );
 }
+
+
 
 
