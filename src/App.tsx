@@ -75,6 +75,7 @@ import { Product, Contact, Invoice, Quotation, View, InvoiceItem, Tenant, AppCon
 import { InvoicePreviewModal } from './components/InvoicePreviewModal';
 import { RecordPaymentModal } from './components/RecordPaymentModal';
 import { templates } from './invoiceTemplates';
+import { INVENTORY_UNITS } from './constants';
 import { cn, formatCurrency, calculateGST } from './utils';
 import { supabase, supabaseUrl, supabaseAnonKey } from './lib/supabase';
 import { StatCard } from './components/StatCard';
@@ -3828,6 +3829,18 @@ function NewProductModal({ isOpen, onClose, editingProduct, onSave }: {
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Stock</label>
               <input type="number" value={stock} onChange={(e) => setStock(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Unit</label>
+              <select 
+                value={unit} 
+                onChange={(e) => setUnit(e.target.value)} 
+                className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
+              >
+                {INVENTORY_UNITS.map(u => (
+                  <option key={u.value} value={u.value}>{u.label}</option>
+                ))}
+              </select>
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">GST Rate (%) *</label>

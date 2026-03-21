@@ -61,6 +61,7 @@ export interface InvoiceItem {
   gstRate: number;
   amount: number;
   gstAmount: number;
+  unit?: string;
 }
 
 export interface Invoice {

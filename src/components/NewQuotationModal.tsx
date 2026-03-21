@@ -36,6 +36,7 @@ export function NewQuotationModal({ isOpen, onClose, products, contacts, activeT
             updatedItem.hsnCode = product.hsnCode;
             updatedItem.price = product.price;
             updatedItem.gstRate = product.gstRate;
+            updatedItem.unit = product.unit;
           }
         }
         
@@ -202,13 +203,20 @@ export function NewQuotationModal({ isOpen, onClose, products, contacts, activeT
                           </select>
                         </td>
                         <td className="px-4 py-4">
-                          <input 
-                            type="number" 
-                            min="1"
-                            value={item.quantity || ''}
-                            onChange={(e) => updateItem(item.id!, 'quantity', Number(e.target.value))}
-                            className="w-full bg-white border-slate-200 rounded-lg text-sm focus:ring-emerald-500/20 focus:border-emerald-500"
-                          />
+                          <div className="relative">
+                            <input 
+                              type="number" 
+                              min="1"
+                              value={item.quantity || ''}
+                              onChange={(e) => updateItem(item.id!, 'quantity', Number(e.target.value))}
+                              className="w-full bg-white border-slate-200 rounded-lg text-sm focus:ring-emerald-500/20 focus:border-emerald-500 pr-12"
+                            />
+                            {item.unit && (
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                {item.unit}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-4">
                           <div className="relative">
@@ -294,13 +302,20 @@ export function NewQuotationModal({ isOpen, onClose, products, contacts, activeT
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-500 uppercase">Quantity</label>
-                          <input 
-                            type="number" 
-                            min="1"
-                            value={item.quantity || ''}
-                            onChange={(e) => updateItem(item.id!, 'quantity', Number(e.target.value))}
-                            className="w-full bg-white border-slate-200 rounded-lg text-sm focus:ring-emerald-500/20 focus:border-emerald-500"
-                          />
+                          <div className="relative">
+                            <input 
+                              type="number" 
+                              min="1"
+                              value={item.quantity || ''}
+                              onChange={(e) => updateItem(item.id!, 'quantity', Number(e.target.value))}
+                              className="w-full bg-white border-slate-200 rounded-lg text-sm focus:ring-emerald-500/20 focus:border-emerald-500 pr-12"
+                            />
+                            {item.unit && (
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                {item.unit}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-500 uppercase">GST %</label>
